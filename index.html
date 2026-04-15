@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tap Universe ✨</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7b4fff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tap Universe">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+
+body {
+  background:#07071a;
+  color:#fff;
+  font-family:'Segoe UI',system-ui,sans-serif;
+  height:100dvh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── Canvases ─────────────────────────────────────────── */
+#starfield, #particles {
+  position:fixed; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+}
+#starfield { z-index:0; }
+#particles { z-index:5; }
+
+/* ── Header ───────────────────────────────────────────── */
+#header {
+  position:relative; z-index:10;
+  padding:14px 16px 8px;
+  text-align:center;
+  background:linear-gradient(180deg,rgba(7,7,26,.95) 0%,rgba(7,7,26,0) 100%);
+}
+
+#currency {
+  font-size:2.2rem; font-weight:800;
+  color:#ffd700;
+  text-shadow:0 0 24px rgba(255,215,0,.6);
+  letter-spacing:1px;
+  transition:transform .08s;
+}
+#currency.bump { transform:scale(1.08); }
+#rates {
+  font-size:.82rem; color:#7070a0;
+  margin-top:3px;
+}
+#prestige-badge {
+  display:inline-block;
+  background:linear-gradient(135deg,#ff6b6b,#ffd700);
+  color:#000;
+  font-size:.7rem; font-weight:700;
+  padding:2px 8px; border-radius:20px;
+  margin-top:4px;
+  opacity:0; transition:opacity .4s;
+}
+#prestige-badge.show { opacity:1; }
+
+/* ── Main tap area ────────────────────────────────────── */
+#main {
+  position:relative; z-index:10;
+  flex:1; display:flex;
+  flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:8px; min-height:0;
+}
+
+#tap-btn {
+  position:relative;
+  width:min(210px,44vw); height:min(210px,44vw);
+  border-radius:50%; border:none; cursor:pointer;
+  background:radial-gradient(circle at 38% 32%,#9b6fff,#3a0ca3);
+  box-shadow:
+    0 0 50px rgba(123,79,255,.7),
+    0 0 100px rgba(123,79,255,.25),
+    inset 0 0 30px rgba(255,255,255,.12);
+  transition:transform .07s ease, box-shadow .07s;
+  -webkit-touch-callout:none;
+  outline:none;
+}
+#tap-btn:active { transform:scale(.91); }
+#tap-btn.tap-pop {
+  animation:tap-pop .12s ease-out;
+}
+@keyframes tap-pop {
+  0%   { transform:scale(.91); }
+  60%  { transform:scale(1.05); }
+  100% { transform:scale(1); }
+}
+
+#tap-btn .star-emoji {
+  font-size:min(76px,15vw);
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+#tap-btn::after {
+  content:'';
+  position:absolute; top:-10px; left:-10px; right:-10px; bottom:-10px;
+  border-radius:50%;
+  border:2px solid rgba(123,79,255,.4);
+  animation:pulse-ring 2s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%   { transform:scale(1); opacity:.8; }
+  50%  { transform:scale(1.07); opacity:.3; }
+  100% { transform:scale(1); opacity:.8; }
+}
+
+#tap-hint { margin-top:10px; font-size:.82rem; color:#5050a0; }
+
+/* ── Floating numbers ─────────────────────────────────── */
+.float-num {
+  position:fixed;
+  font-weight:800; color:#ffd700;
+  text-shadow:0 0 12px rgba(255,215,0,.9);
+  pointer-events:none; z-index:999;
+  font-size:1.25rem;
+  animation:float-up .9s ease-out forwards;
+}
+.float-num.crit {
+  color:#ff6b6b; font-size:2rem;
+  text-shadow:0 0 18px rgba(255,107,107,.9);
+}
+@keyframes float-up {
+  0%   { transform:translateY(0) scale(1); opacity:1; }
+  100% { transform:translateY(-90px) scale(.75); opacity:0; }
+}
+
+/* ── Shop ─────────────────────────────────────────────── */
+#shop {
+  position:relative; z-index:10;
+  height:40vh; overflow-y:auto;
+  padding:6px 10px 20px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+#shop::-webkit-scrollbar { display:none; }
+
+.shop-section-label {
+  font-size:.68rem; text-transform:uppercase;
+  letter-spacing:2px; color:#3a3a6a;
+  text-align:center; padding:4px 0;
+}
+
+.card {
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:7px;
+  display:flex; align-items:center; gap:10px;
+  cursor:pointer;
+  transition:background .15s, border-color .15s, transform .08s;
+  position:relative; overflow:hidden;
+}
+.card.can-buy {
+  border-color:rgba(123,79,255,.55);
+  background:rgba(123,79,255,.12);
+  box-shadow:0 0 12px rgba(123,79,255,.2);
+}
+.card.can-buy:active { transform:scale(.97); }
+.card.locked  { opacity:.35; cursor:default; }
+.card.maxed   { opacity:.25; cursor:default; }
+
+.card-icon { font-size:1.9rem; width:40px; text-align:center; flex-shrink:0; }
+.card-body  { flex:1; min-width:0; }
+.card-name  { font-weight:600; font-size:.92rem; }
+.card-desc  { font-size:.73rem; color:#7070a0; margin-top:1px; }
+.card-right { text-align:right; flex-shrink:0; }
+.card-cost  { font-size:.88rem; font-weight:700; color:#ffd700; }
+.card-count {
+  position:absolute; top:5px; right:8px;
+  font-size:.68rem; font-weight:700; color:#7b4fff;
+}
+
+/* ── Prestige button ──────────────────────────────────── */
+#prestige-btn {
+  display:none;
+  margin:8px 10px;
+  padding:12px;
+  border:none; border-radius:14px;
+  background:linear-gradient(135deg,#ff6b6b,#ffd700);
+  color:#000; font-weight:800; font-size:1rem;
+  cursor:pointer;
+  position:relative; z-index:10;
+  box-shadow:0 0 20px rgba(255,107,107,.5);
+  animation:prestige-glow 2s ease-in-out infinite;
+}
+@keyframes prestige-glow {
+  0%,100% { box-shadow:0 0 20px rgba(255,107,107,.5); }
+  50%      { box-shadow:0 0 40px rgba(255,215,0,.8); }
+}
+
+/* ── Toast ────────────────────────────────────────────── */
+/* ── Install banner ───────────────────────────────────── */
+#install-banner {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0; z-index:300;
+  background:linear-gradient(135deg,#1a0a3a,#0d0d2a);
+  border-top:1px solid rgba(123,79,255,.4);
+  padding:14px 16px;
+  align-items:center; gap:12px;
+  box-shadow:0 -4px 20px rgba(123,79,255,.3);
+}
+#install-banner .ib-icon { font-size:2rem; flex-shrink:0; }
+#install-banner .ib-text { flex:1; font-size:.85rem; line-height:1.3; }
+#install-banner .ib-text strong { display:block; margin-bottom:2px; }
+#install-banner .ib-text span { color:#7070a0; font-size:.78rem; }
+#install-banner .ib-btns { display:flex; gap:8px; flex-shrink:0; }
+#install-yes {
+  background:#7b4fff; color:#fff;
+  border:none; border-radius:10px;
+  padding:8px 14px; font-size:.85rem; font-weight:700; cursor:pointer;
+}
+#install-no {
+  background:transparent; color:#5050a0;
+  border:1px solid rgba(255,255,255,.1); border-radius:10px;
+  padding:8px 10px; font-size:.85rem; cursor:pointer;
+}
+
+#toast {
+  position:fixed; top:72px; left:50%;
+  transform:translateX(-50%) translateY(-12px);
+  background:linear-gradient(135deg,#7b4fff,#3a0ca3);
+  color:#fff; padding:9px 18px;
+  border-radius:22px; font-size:.88rem; font-weight:600;
+  opacity:0; transition:all .35s ease;
+  z-index:200; white-space:nowrap;
+  box-shadow:0 4px 20px rgba(123,79,255,.6);
+  pointer-events:none;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<canvas id="particles"></canvas>
+
+<div id="header">
+  <div id="currency">✨ 0</div>
+  <div id="rates">0/sec passive · tap: +1</div>
+  <div id="prestige-badge">🌀 Prestige ×<span id="pb-count">1</span></div>
+</div>
+
+<div id="main">
+  <button id="tap-btn" aria-label="Tap">
+    <span class="star-emoji">✨</span>
+  </button>
+  <div id="tap-hint">tap to collect starlight</div>
+</div>
+
+<button id="prestige-btn" onclick="prestige()">
+  🌀 BIG BANG — Reset for ×2 permanent bonus!
+</button>
+
+<div id="shop">
+  <div id="shop-list"></div>
+</div>
+
+<div id="toast"></div>
+
+<div id="install-banner">
+  <div class="ib-icon">📲</div>
+  <div class="ib-text">
+    <strong>Add to Home Screen</strong>
+    <span>Play offline, no app store needed</span>
+  </div>
+  <div class="ib-btns">
+    <button id="install-yes">Install</button>
+    <button id="install-no">Not now</button>
+  </div>
+</div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ITEM DEFINITIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const ITEMS = [
+  // ── Tap upgrades
+  { id:'t1', cat:'tap', icon:'👆', name:'Better Touch',   desc:'Tap power ×2',   cost:25,       mul:2,  max:1 },
+  { id:'t2', cat:'tap', icon:'✋', name:'Star Fingers',   desc:'Tap power ×3',   cost:300,      mul:3,  max:1 },
+  { id:'t3', cat:'tap', icon:'⚡', name:'Cosmic Touch',   desc:'Tap power ×5',   cost:5000,     mul:5,  max:1 },
+  { id:'t4', cat:'tap', icon:'🌀', name:'Quantum Tap',    desc:'Tap power ×10',  cost:50000,    mul:10, max:1 },
+  { id:'t5', cat:'tap', icon:'💠', name:'Singularity Tap',desc:'Tap power ×25',  cost:500000,   mul:25, max:1 },
+
+  // ── Auto producers
+  { id:'a1', cat:'auto', icon:'⭐', name:'Star Dust',     desc:'+1/s each',       base:15,   rate:1,      count:0 },
+  { id:'a2', cat:'auto', icon:'🌟', name:'Nebula',        desc:'+8/s each',       base:100,  rate:8,      count:0 },
+  { id:'a3', cat:'auto', icon:'🪐', name:'Solar System',  desc:'+50/s each',      base:800,  rate:50,     count:0 },
+  { id:'a4', cat:'auto', icon:'🌌', name:'Galaxy',        desc:'+350/s each',     base:6500, rate:350,    count:0 },
+  { id:'a5', cat:'auto', icon:'🔭', name:'Observatory',   desc:'+2500/s each',    base:55000,rate:2500,   count:0 },
+  { id:'a6', cat:'auto', icon:'🌠', name:'Universe Core', desc:'+20000/s each',   base:500000,rate:20000, count:0 },
+
+  // ── Boosts (unlock after buying N autos)
+  { id:'m1', cat:'boost', icon:'💫', name:'Dust Boost',   desc:'Star Dust ×2',    cost:500,    target:'a1', bMul:2, max:1, req:{id:'a1',n:5} },
+  { id:'m2', cat:'boost', icon:'💥', name:'Nebula Boost', desc:'Nebula ×2',        cost:5000,   target:'a2', bMul:2, max:1, req:{id:'a2',n:5} },
+  { id:'m3', cat:'boost', icon:'🚀', name:'Solar Boost',  desc:'Solar System ×3', cost:40000,  target:'a3', bMul:3, max:1, req:{id:'a3',n:5} },
+  { id:'m4', cat:'boost', icon:'🌈', name:'Galaxy Boost', desc:'Galaxy ×3',        cost:350000, target:'a4', bMul:3, max:1, req:{id:'a4',n:5} },
+
+  // ── Crit upgrades
+  { id:'c1', cat:'crit', icon:'🎯', name:'Lucky Touch',   desc:'5% crit (×5x dmg)',  cost:200,   max:1 },
+  { id:'c2', cat:'crit', icon:'🎲', name:'Gambler\'s Luck',desc:'+10% crit chance',   cost:2000,  max:1 },
+  { id:'c3', cat:'crit', icon:'💎', name:'Diamond Crits', desc:'Crits deal ×15',      cost:25000, max:1 },
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let G = {
+  sl: 0,           // starlight
+  total: 0,        // total ever earned (session + all prestiges)
+  tapPow: 1,
+  passRate: 0,
+  critChance: 0,
+  critMul: 5,
+  prestigeMul: 1,
+  prestigeCount: 0,
+  bought: {},      // id → count
+  autoMul: {},     // auto id → bonus multiplier
+  lastTick: Date.now(),
+  milestones: {},
+};
+
+const MILESTONES = [100,1000,10000,100000,1e6,1e7,1e8,1e9];
+
+function saveG() {
+  G.lastTick = Date.now();
+  try { localStorage.setItem('tu_v3', JSON.stringify(G)); } catch(e){}
+}
+
+function loadG() {
+  try {
+    const raw = localStorage.getItem('tu_v3');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    Object.assign(G, d);
+    const elapsed = (Date.now() - (G.lastTick||Date.now())) / 1000;
+    if (elapsed > 5 && G.passRate > 0) {
+      const cap = G.passRate * 3600 * 8;
+      const offline = Math.min(elapsed * G.passRate, cap);
+      G.sl     += offline;
+      G.total  += offline;
+      showToast(`Welcome back! Earned ${fmt(offline)} while away ✨`);
+    }
+    G.lastTick = Date.now();
+  } catch(e) {}
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FORMATTING
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function fmt(n) {
+  if (!isFinite(n) || n < 0) return '0';
+  if (n < 1000) return Math.floor(n).toLocaleString();
+  const sfx = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd'];
+  const i = Math.min(Math.floor(Math.log10(n)/3), sfx.length-1);
+  const v = n / Math.pow(1000, i);
+  return (v>=100?v.toFixed(0):v>=10?v.toFixed(1):v.toFixed(2)) + sfx[i];
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CORE LOGIC
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function cost(item) {
+  if (item.cat === 'auto') {
+    const n = G.bought[item.id]||0;
+    return Math.floor(item.base * Math.pow(1.15, n));
+  }
+  return item.cost;
+}
+
+function isUnlocked(item) {
+  if (!item.req) return true;
+  return (G.bought[item.req.id]||0) >= item.req.n;
+}
+
+function isMaxed(item) {
+  return item.max && (G.bought[item.id]||0) >= item.max;
+}
+
+function recalc() {
+  // tap
+  G.tapPow = G.prestigeMul;
+  ITEMS.filter(i=>i.cat==='tap').forEach(i=>{
+    if (G.bought[i.id]) G.tapPow *= i.mul;
+  });
+
+  // passive
+  G.passRate = 0;
+  ITEMS.filter(i=>i.cat==='auto').forEach(i=>{
+    const n = G.bought[i.id]||0;
+    const m = G.autoMul[i.id]||1;
+    G.passRate += n * i.rate * m * G.prestigeMul;
+  });
+
+  // crit
+  G.critChance = 0; G.critMul = 5;
+  if (G.bought['c1']) G.critChance += .05;
+  if (G.bought['c2']) G.critChance += .10;
+  if (G.bought['c3']) G.critMul = 15;
+}
+
+function buy(id) {
+  const item = ITEMS.find(i=>i.id===id);
+  if (!item||!isUnlocked(item)||isMaxed(item)) return;
+  const c = cost(item);
+  if (G.sl < c) return;
+
+  G.sl -= c;
+  G.bought[id] = (G.bought[id]||0)+1;
+
+  if (item.cat==='boost') {
+    G.autoMul[item.target] = (G.autoMul[item.target]||1)*item.bMul;
+  }
+
+  recalc();
+  buildShop();
+  showToast(`${item.icon} ${item.name} unlocked!`);
+  saveG();
+}
+
+function doTap(x, y) {
+  let pow = G.tapPow, crit = false;
+  if (G.critChance>0 && Math.random()<G.critChance) {
+    pow *= G.critMul; crit = true;
+  }
+  G.sl    += pow;
+  G.total += pow;
+  spawnFloat(x, y, pow, crit);
+  spawnParticles(x, y, crit);
+  checkMilestones();
+  bumpCurrency();
+}
+
+function checkMilestones() {
+  MILESTONES.forEach(m=>{
+    if (!G.milestones[m] && G.total >= m) {
+      G.milestones[m] = true;
+      showToast(`🏆 Milestone: ${fmt(m)} total starlight!`);
+    }
+  });
+  const show = G.total >= 1e6 && G.prestigeCount < 10;
+  document.getElementById('prestige-btn').style.display = show ? 'block' : 'none';
+}
+
+function prestige() {
+  if (G.total < 1e6) return;
+  if (!confirm('Start a Big Bang?\n\nThis resets your progress but permanently doubles all production!')) return;
+  G.prestigeCount++;
+  G.prestigeMul *= 2;
+  G.sl = 0; G.total = 0;
+  G.bought = {}; G.autoMul = {};
+  G.milestones = {};
+  recalc();
+  buildShop();
+  document.getElementById('prestige-btn').style.display='none';
+  const badge = document.getElementById('prestige-badge');
+  badge.classList.add('show');
+  document.getElementById('pb-count').textContent = G.prestigeMul;
+  showToast(`🌀 Big Bang! You now have a permanent ×${G.prestigeMul} multiplier!`);
+  saveG();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TICK
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let lastTickTime = Date.now();
+function tick() {
+  const now = Date.now();
+  const dt  = (now - lastTickTime)/1000;
+  lastTickTime = now;
+
+  if (G.passRate > 0) {
+    const earned = G.passRate * dt;
+    G.sl    += earned;
+    G.total += earned;
+    checkMilestones();
+  }
+
+  renderHeader();
+  updateCardCosts();
+  requestAnimationFrame(tick);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderHeader() {
+  document.getElementById('currency').textContent = `✨ ${fmt(G.sl)}`;
+  document.getElementById('rates').textContent =
+    `${fmt(G.passRate)}/sec · tap: +${fmt(G.tapPow)}${G.critChance?` · crit: ${Math.round(G.critChance*100)}%`:''}`;
+}
+
+let currBumpTO;
+function bumpCurrency() {
+  const el = document.getElementById('currency');
+  el.classList.add('bump');
+  clearTimeout(currBumpTO);
+  currBumpTO = setTimeout(()=>el.classList.remove('bump'), 120);
+}
+
+function buildShop() {
+  const list = document.getElementById('shop-list');
+  list.innerHTML = '';
+
+  const sections = [
+    { label:'⚡ TAP UPGRADES',   cats:['tap'] },
+    { label:'🏭 AUTO-PRODUCERS', cats:['auto'] },
+    { label:'🔥 BOOSTS',         cats:['boost'] },
+    { label:'🎯 CRIT UPGRADES',  cats:['crit'] },
+  ];
+
+  sections.forEach(sec=>{
+    const items = ITEMS.filter(i=>sec.cats.includes(i.cat));
+    if (!items.length) return;
+    const lbl = document.createElement('div');
+    lbl.className = 'shop-section-label';
+    lbl.textContent = sec.label;
+    list.appendChild(lbl);
+
+    items.forEach(item=>{
+      const maxed    = isMaxed(item);
+      const unlocked = isUnlocked(item);
+      const c        = cost(item);
+      const canBuy   = !maxed && unlocked && G.sl >= c;
+      const cnt      = G.bought[item.id]||0;
+
+      const card = document.createElement('div');
+      card.className = 'card' + (maxed?' maxed':!unlocked?' locked':canBuy?' can-buy':'');
+      card.dataset.id = item.id;
+
+      const costTxt = maxed ? '✓' : `⭐ ${fmt(c)}`;
+      const descTxt = (!unlocked && item.req)
+        ? `Need ${item.req.n} ${ITEMS.find(i=>i.id===item.req.id)?.name}`
+        : item.desc;
+
+      card.innerHTML = `
+        ${item.cat==='auto'&&cnt>0 ? `<div class="card-count">×${cnt}</div>` : ''}
+        <div class="card-icon">${item.icon}</div>
+        <div class="card-body">
+          <div class="card-name">${item.name}</div>
+          <div class="card-desc">${descTxt}</div>
+        </div>
+        <div class="card-right"><div class="card-cost">${costTxt}</div></div>
+      `;
+
+      if (!maxed && unlocked) card.addEventListener('click', ()=>buy(item.id));
+      list.appendChild(card);
+    });
+  });
+}
+
+function updateCardCosts() {
+  document.querySelectorAll('.card[data-id]').forEach(card=>{
+    const id   = card.dataset.id;
+    const item = ITEMS.find(i=>i.id===id);
+    if (!item||isMaxed(item)||!isUnlocked(item)) return;
+    const c      = cost(item);
+    const canBuy = G.sl >= c;
+    card.classList.toggle('can-buy', canBuy);
+
+    const costEl = card.querySelector('.card-cost');
+    if (costEl) costEl.textContent = `⭐ ${fmt(c)}`;
+
+    if (item.cat==='auto') {
+      const cntEl = card.querySelector('.card-count');
+      const cnt   = G.bought[id]||0;
+      if (cnt > 0) {
+        if (!cntEl) {
+          const d = document.createElement('div');
+          d.className='card-count'; d.textContent=`×${cnt}`;
+          card.prepend(d);
+        } else { cntEl.textContent = `×${cnt}`; }
+      }
+    }
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FLOATING NUMBERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function spawnFloat(x, y, val, crit) {
+  const el = document.createElement('div');
+  el.className = 'float-num' + (crit?' crit':'');
+  el.textContent = (crit?'💥 ':'+') + fmt(val);
+  el.style.left = (x - 40)+'px';
+  el.style.top  = (y - 20)+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 900);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PARTICLE SYSTEM
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const pCvs = document.getElementById('particles');
+const pCtx = pCvs.getContext('2d');
+let particles = [];
+
+function resizePCvs() {
+  pCvs.width  = window.innerWidth;
+  pCvs.height = window.innerHeight;
+}
+
+function spawnParticles(x, y, crit) {
+  const n = crit?22:10;
+  for (let i=0;i<n;i++) {
+    const a = Math.random()*Math.PI*2;
+    const s = crit?(4+Math.random()*7):(2+Math.random()*4);
+    particles.push({
+      x,y,
+      vx:Math.cos(a)*s,
+      vy:Math.sin(a)*s-2,
+      life:1,
+      sz: crit?(3+Math.random()*4):(2+Math.random()*2.5),
+      col: crit
+        ? `hsl(${20+Math.random()*30},100%,60%)`
+        : `hsl(${240+Math.random()*60},100%,70%)`,
+    });
+  }
+}
+
+function drawParticles() {
+  pCtx.clearRect(0,0,pCvs.width,pCvs.height);
+  for (let i=particles.length-1;i>=0;i--) {
+    const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy;
+    p.vy+=0.18; p.vx*=0.97;
+    p.life-=0.038;
+    if (p.life<=0){particles.splice(i,1);continue;}
+    pCtx.save();
+    pCtx.globalAlpha=p.life;
+    pCtx.fillStyle=p.col;
+    pCtx.shadowBlur=8;
+    pCtx.shadowColor=p.col;
+    pCtx.beginPath();
+    pCtx.arc(p.x,p.y,p.sz,0,Math.PI*2);
+    pCtx.fill();
+    pCtx.restore();
+  }
+  requestAnimationFrame(drawParticles);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STARFIELD
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const sfCvs = document.getElementById('starfield');
+const sfCtx = sfCvs.getContext('2d');
+let stars = [];
+
+function initStars() {
+  sfCvs.width  = window.innerWidth;
+  sfCvs.height = window.innerHeight;
+  stars = [];
+  for (let i=0;i<160;i++) {
+    stars.push({
+      x:Math.random()*sfCvs.width,
+      y:Math.random()*sfCvs.height,
+      r:Math.random()*1.8,
+      spd:.08+Math.random()*.25,
+      base:.3+Math.random()*.7,
+      phase:Math.random()*Math.PI*2,
+    });
+  }
+}
+
+function drawStars() {
+  sfCtx.fillStyle='#07071a';
+  sfCtx.fillRect(0,0,sfCvs.width,sfCvs.height);
+  const now=performance.now()/1000;
+  stars.forEach(s=>{
+    const a=s.base*(.7+.3*Math.sin(now*s.spd+s.phase));
+    sfCtx.save();
+    sfCtx.globalAlpha=a;
+    sfCtx.fillStyle='#fff';
+    if(s.r>1.2){sfCtx.shadowBlur=5;sfCtx.shadowColor='#aaaaff';}
+    sfCtx.beginPath();
+    sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    sfCtx.fill();
+    sfCtx.restore();
+  });
+  requestAnimationFrame(drawStars);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TOAST
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let toastTO=null;
+function showToast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTO);
+  toastTO=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TAP BUTTON EVENTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const btn = document.getElementById('tap-btn');
+
+function handleTap(x, y) {
+  doTap(x, y);
+  btn.classList.remove('tap-pop');
+  void btn.offsetWidth; // reflow to restart
+  btn.classList.add('tap-pop');
+}
+
+btn.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  for (const t of e.changedTouches) handleTap(t.clientX, t.clientY);
+}, {passive:false});
+
+btn.addEventListener('click', e=>{
+  const r=btn.getBoundingClientRect();
+  handleTap(r.left+r.width/2, r.top+r.height/2);
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+loadG();
+recalc();
+buildShop();
+renderHeader();
+
+if (G.prestigeCount > 0) {
+  document.getElementById('prestige-badge').classList.add('show');
+  document.getElementById('pb-count').textContent = G.prestigeMul;
+}
+
+initStars();
+drawStars();
+resizePCvs();
+drawParticles();
+requestAnimationFrame(tick);
+
+setInterval(saveG, 15000);
+window.addEventListener('resize', ()=>{ initStars(); resizePCvs(); });
+
+// ── PWA service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+
+// ── Install prompt (Android "Add to Home Screen")
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installPrompt = e;
+  // Show install button after a short delay so it doesn't interrupt first session
+  setTimeout(() => {
+    if (!localStorage.getItem('pwa_installed')) showInstallBanner();
+  }, 30000);
+});
+
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem('pwa_installed','1');
+  hideInstallBanner();
+});
+
+function showInstallBanner() {
+  const b = document.getElementById('install-banner');
+  if (b) b.style.display = 'flex';
+}
+function hideInstallBanner() {
+  const b = document.getElementById('install-banner');
+  if (b) b.style.display = 'none';
+}
+document.getElementById('install-yes')?.addEventListener('click', async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  const { outcome } = await installPrompt.userChoice;
+  if (outcome === 'accepted') localStorage.setItem('pwa_installed','1');
+  hideInstallBanner();
+});
+document.getElementById('install-no')?.addEventListener('click', () => {
+  hideInstallBanner();
+  localStorage.setItem('pwa_installed','1');
+});
+
+// ── Reset helper (for dev) — triple-tap the rates line
+let devTaps=0,devTO;
+document.getElementById('rates').addEventListener('click',()=>{
+  devTaps++;
+  clearTimeout(devTO);
+  devTO=setTimeout(()=>devTaps=0,600);
+  if(devTaps>=3){
+    if(confirm('RESET SAVE DATA?')){
+      localStorage.removeItem('tu_v3');
+      location.reload();
+    }
+  }
+});
+</script>
+</body>
+</html>

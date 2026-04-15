@@ -972,26 +972,26 @@ function prestigeFlash(color) {
 // ACHIEVEMENTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const ACHIEVEMENTS = [
-  { id:'a_first',   icon:'🌟', name:'First Purr',         desc:'Collect your first treat',                  check:()=>G.total>=1 },
-  { id:'a_100',     icon:'⭐', name:'Spark',             desc:'Earn 100 total treats',                     check:()=>G.total>=100 },
-  { id:'a_1k',      icon:'✨', name:'Ignition',          desc:'Earn 1,000 total treats',                   check:()=>G.total>=1000 },
-  { id:'a_1m',      icon:'💫', name:'Millionaire Meow',  desc:'Earn 1M total treats',                      check:()=>G.total>=1e6 },
-  { id:'a_1b',      icon:'🌌', name:'Fat Cat',           desc:'Earn 1B total treats',                      check:()=>G.total>=1e9 },
-  { id:'a_1t',      icon:'🌠', name:'Cat Tycoon',        desc:'Earn 1T total treats',                      check:()=>G.total>=1e12 },
-  { id:'a_tap100',  icon:'👆', name:'Petting Machine',   desc:'Tap 100 times',                             check:()=>G.taps>=100 },
-  { id:'a_tap1k',   icon:'✋', name:'Petting God',       desc:'Tap 1,000 times',                           check:()=>G.taps>=1000 },
-  { id:'a_tap10k',  icon:'⚡', name:'Can\'t Stop Won\'t Stop', desc:'Tap 10,000 times',                    check:()=>G.taps>=10000 },
-  { id:'a_crit1',   icon:'🎯', name:'Lucky Paws',        desc:'Land your first critical hit',              check:()=>G.crits>=1 },
-  { id:'a_crit50',  icon:'🎲', name:'Fortune Favours Cats', desc:'Land 50 critical hits',                  check:()=>G.crits>=50 },
-  { id:'a_auto1',   icon:'🤖', name:'First Helper',      desc:'Buy your first cat helper',                 check:()=>ITEMS.filter(i=>i.cat==='auto').some(i=>(G.bought[i.id]||0)>0) },
-  { id:'a_auto50',  icon:'🏭', name:'Cat Army',          desc:'Own 50 cat helpers total',                  check:()=>ITEMS.filter(i=>i.cat==='auto').reduce((s,i)=>s+(G.bought[i.id]||0),0)>=50 },
-  { id:'a_rate100', icon:'⚙️', name:'Purring Along',     desc:'Reach 100/s passive income',                check:()=>G.passRate>=100 },
-  { id:'a_rate1m',  icon:'🚀', name:'Treat Tsunami',     desc:'Reach 1M/s passive income',                 check:()=>G.passRate>=1e6 },
-  { id:'a_buy10',   icon:'🛒', name:'Spoil Them All',    desc:'Make 10 purchases',                         check:()=>G.purchases>=10 },
-  { id:'a_prestige',icon:'🌀', name:'Great Catnap',      desc:'Complete your first Great Catnap',          check:()=>G.prestigeCount>=1 },
-  { id:'a_pres3',   icon:'🌈', name:'Nine Lives',        desc:'Complete 3 Great Catnaps',                  check:()=>G.prestigeCount>=3 },
-  { id:'a_allprod', icon:'🌍', name:'Crazy Cat Person',  desc:'Own at least 1 of every cat helper type',   check:()=>ITEMS.filter(i=>i.cat==='auto').every(i=>(G.bought[i.id]||0)>=1) },
-  { id:'a_void',    icon:'🌑', name:'Cat Planet Owner',  desc:'Own a Cat Planet',                          check:()=>(G.bought['a10']||0)>=1 },
+  { id:'a_first',   icon:'🐾', name:'First Purr',         desc:'Collect your first treat',                  check:()=>G.total>=1 },
+  { id:'a_100',     icon:'🐟', name:'Treat Taster',        desc:'Earn 100 total treats',                     check:()=>G.total>=100 },
+  { id:'a_1k',      icon:'🐠', name:'Fishy Business',      desc:'Earn 1,000 total treats',                   check:()=>G.total>=1000 },
+  { id:'a_1m',      icon:'😸', name:'Millionaire Meow',    desc:'Earn 1M total treats',                      check:()=>G.total>=1e6 },
+  { id:'a_1b',      icon:'😻', name:'Fat Cat',             desc:'Earn 1B total treats',                      check:()=>G.total>=1e9 },
+  { id:'a_1t',      icon:'👑', name:'Cat Tycoon',          desc:'Earn 1T total treats',                      check:()=>G.total>=1e12 },
+  { id:'a_tap100',  icon:'🐱', name:'Petting Machine',     desc:'Pet the cat 100 times',                     check:()=>G.taps>=100 },
+  { id:'a_tap1k',   icon:'😺', name:'Petting God',         desc:'Pet the cat 1,000 times',                   check:()=>G.taps>=1000 },
+  { id:'a_tap10k',  icon:'🙀', name:'Can\'t Stop Won\'t Stop', desc:'Pet the cat 10,000 times',              check:()=>G.taps>=10000 },
+  { id:'a_crit1',   icon:'🍀', name:'Lucky Paws',          desc:'Land your first critical pet',              check:()=>G.crits>=1 },
+  { id:'a_crit50',  icon:'🎲', name:'Fortune Favours Cats', desc:'Land 50 critical pets',                   check:()=>G.crits>=50 },
+  { id:'a_auto1',   icon:'😴', name:'First Recruit',       desc:'Buy your first cat helper',                 check:()=>ITEMS.filter(i=>i.cat==='auto').some(i=>(G.bought[i.id]||0)>0) },
+  { id:'a_auto50',  icon:'🐈', name:'Cat Army',            desc:'Own 50 cat helpers total',                  check:()=>ITEMS.filter(i=>i.cat==='auto').reduce((s,i)=>s+(G.bought[i.id]||0),0)>=50 },
+  { id:'a_rate100', icon:'😽', name:'Purring Along',       desc:'Reach 100 treats/sec passive',              check:()=>G.passRate>=100 },
+  { id:'a_rate1m',  icon:'🌊', name:'Treat Tsunami',       desc:'Reach 1M treats/sec passive',               check:()=>G.passRate>=1e6 },
+  { id:'a_buy10',   icon:'🛒', name:'Spoil Them All',      desc:'Make 10 purchases',                         check:()=>G.purchases>=10 },
+  { id:'a_prestige',icon:'💤', name:'Great Catnap',        desc:'Complete your first Great Catnap',          check:()=>G.prestigeCount>=1 },
+  { id:'a_pres3',   icon:'🌈', name:'Nine Lives',          desc:'Complete 3 Great Catnaps',                  check:()=>G.prestigeCount>=3 },
+  { id:'a_allprod', icon:'🐈‍⬛', name:'Crazy Cat Person',  desc:'Own at least 1 of every cat helper',        check:()=>ITEMS.filter(i=>i.cat==='auto').every(i=>(G.bought[i.id]||0)>=1) },
+  { id:'a_void',    icon:'🪐', name:'Cat Planet Owner',    desc:'Own a Cat Planet',                          check:()=>(G.bought['a10']||0)>=1 },
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1331,7 +1331,7 @@ function buildShop() {
     card.className = 'card' + (maxed?' maxed':!unlocked?' locked':canBuy?' can-buy':'');
     card.dataset.id = item.id;
 
-    const costTxt = maxed ? '✓ Maxed' : !unlocked ? '🔒' : `⭐ ${fmt(c)}`;
+    const costTxt = maxed ? '✓ Maxed' : !unlocked ? '🔒' : `🐟 ${fmt(c)}`;
     const descTxt = (!unlocked && item.req)
       ? `🔒 Need ${item.req.n}× ${ITEMS.find(i=>i.id===item.req.id)?.name} first`
       : item.desc;
@@ -1405,7 +1405,7 @@ function updateCardCosts() {
     card.classList.toggle('can-buy', canBuy);
 
     const costEl = card.querySelector('.card-cost');
-    if (costEl) costEl.textContent = `⭐ ${fmt(c)}`;
+    if (costEl) costEl.textContent = `🐟 ${fmt(c)}`;
 
     if (item.cat==='auto') {
       const cntEl = card.querySelector('.card-count');

@@ -310,6 +310,7 @@ function toggleSound() {
 
 function getCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // Always attempt resume — iOS suspends the context when app backgrounds
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
@@ -325,9 +326,18 @@ function unlockAudio() {
     src.buffer = buf;
     src.connect(ctx.destination);
     src.start(0);
-    audioUnlocked = true;
+    ctx.resume().then(() => { audioUnlocked = true; });
   } catch(e) {}
 }
+
+// Unlock on ANY touch across the whole page (catches first interaction reliably)
+document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+document.addEventListener('touchend',   unlockAudio, { once: true, passive: true });
+
+// Re-resume when the app comes back from background (iOS kills context on hide)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && audioCtx) audioCtx.resume();
+});
 
 // Generic tone builder
 function tone(freq, type, startVol, endVol, duration, startTime, dest) {
@@ -875,7 +885,7 @@ window.addEventListener('resize', ()=>{ initStars(); resizePCvs(); });
 // ── PWA service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(()=>{});
   });
 }
 

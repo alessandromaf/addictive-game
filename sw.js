@@ -1,21 +1,15 @@
-const CACHE = 'tap-universe-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.svg',
-  './icon-512.svg',
-];
+const CACHE = 'tap-universe-v2';
+const STATIC = ['./manifest.json', './icon-192.svg', './icon-512.svg'];
 
-// Install: cache all static assets
+// Install: pre-cache static assets only (NOT index.html)
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS))
+    caches.open(CACHE).then(c => c.addAll(STATIC))
   );
   self.skipWaiting();
 });
 
-// Activate: remove old caches
+// Activate: wipe old caches immediately
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -25,18 +19,34 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch: cache-first for assets, network-first for everything else
+// Fetch strategy:
+//   index.html  → network-first (always get latest, fall back to cache offline)
+//   everything else → cache-first (icons, manifest)
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        // Cache any new same-origin requests
-        if (e.request.url.startsWith(self.location.origin)) {
+  const url = new URL(e.request.url);
+  const isHtml = url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname.endsWith('/');
+
+  if (isHtml) {
+    // Network-first: try live, cache on success, fall back if offline
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    // Cache-first: static assets
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(res => {
           caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-        }
-        return res;
-      });
-    }).catch(() => caches.match('./index.html'))
-  );
+          return res;
+        });
+      }).catch(() => caches.match('./index.html'))
+    );
+  }
 });

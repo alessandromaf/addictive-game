@@ -1568,6 +1568,15 @@ btn.addEventListener('click', e=>{
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MONETIZATION CONSTANTS (must be before INIT / recalc)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const ADS_REMOVED_KEY  = 'tu_no_ads';
+const BOOST_KEY        = 'tu_boost_until';
+const BOOST_DURATION   = 2 * 60 * 60 * 1000;
+const AD_COOLDOWN      = 30 * 60 * 1000;
+const AD_COOLDOWN_KEY  = 'tu_ad_cooldown';
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // INIT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 loadG();
@@ -1648,12 +1657,6 @@ document.getElementById('install-no')?.addEventListener('click', () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MONETIZATION — Rewarded Ads + Remove Ads IAP
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-const ADS_REMOVED_KEY  = 'tu_no_ads';
-const BOOST_KEY        = 'tu_boost_until';
-const BOOST_DURATION   = 2 * 60 * 60 * 1000; // 2 hours
-const AD_COOLDOWN      = 30 * 60 * 1000;      // 30 min between ads
-const AD_COOLDOWN_KEY  = 'tu_ad_cooldown';
 
 // ── Remove Ads state
 function hasRemovedAds() {

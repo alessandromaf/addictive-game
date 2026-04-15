@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tap Universe">
 <link rel="apple-touch-icon" href="icon-192.svg">
+<style id="theme-style"></style>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
 
@@ -63,6 +64,17 @@ body {
   opacity:0; transition:opacity .4s;
 }
 #prestige-badge.show { opacity:1; }
+
+/* ── Prestige flash ───────────────────────────────────── */
+@keyframes prestige-flash {
+  0%   { opacity:.7; }
+  100% { opacity:0; }
+}
+.theme-flash {
+  position:fixed; inset:0; z-index:9999;
+  pointer-events:none;
+  animation:prestige-flash .7s ease-out forwards;
+}
 
 /* ── Achievements button ──────────────────────────────── */
 #ach-btn {
@@ -547,6 +559,63 @@ const ITEMS = [
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PRESTIGE THEMES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const THEMES = [
+  { name:'Violet',  bg:'#07071a', btn1:'#9b6fff', btn2:'#3a0ca3', glow:'123,79,255',  stars:'#aaaaff', flash:'rgba(123,79,255,.6)' },
+  { name:'Blue',    bg:'#06101a', btn1:'#4fc3f7', btn2:'#0277bd', glow:'79,195,247',  stars:'#aaddff', flash:'rgba(79,195,247,.6)'  },
+  { name:'Cyan',    bg:'#061a1a', btn1:'#4dd0e1', btn2:'#00838f', glow:'77,208,225',  stars:'#aaffff', flash:'rgba(77,208,225,.6)'  },
+  { name:'Emerald', bg:'#061a08', btn1:'#69f0ae', btn2:'#1b5e20', glow:'105,240,174', stars:'#aaffaa', flash:'rgba(105,240,174,.6)' },
+  { name:'Gold',    bg:'#1a1506', btn1:'#ffd740', btn2:'#e65100', glow:'255,215,64',  stars:'#ffffaa', flash:'rgba(255,215,64,.6)'  },
+  { name:'Amber',   bg:'#1a0d06', btn1:'#ffab40', btn2:'#bf360c', glow:'255,171,64',  stars:'#ffddaa', flash:'rgba(255,171,64,.6)'  },
+  { name:'Crimson', bg:'#1a0606', btn1:'#ff5252', btn2:'#b71c1c', glow:'255,82,82',   stars:'#ffaaaa', flash:'rgba(255,82,82,.6)'   },
+  { name:'Rose',    bg:'#1a0614', btn1:'#f48fb1', btn2:'#880e4f', glow:'244,143,177', stars:'#ffaaff', flash:'rgba(244,143,177,.6)' },
+  { name:'Silver',  bg:'#0f0f0f', btn1:'#e0e0e0', btn2:'#616161', glow:'200,200,220', stars:'#ffffff', flash:'rgba(220,220,255,.6)' },
+  { name:'Cosmic',  bg:'#07071a', btn1:'#ff6b6b', btn2:'#7b4fff', glow:'255,107,107', stars:'#ffffff', flash:'rgba(255,215,0,.7)'   },
+];
+
+// Canvas-side theme vars (updated by applyTheme)
+let sfBgColor   = '#07071a';
+let sfStarGlow  = '#aaaaff';
+
+function applyTheme(prestigeCount) {
+  const t = THEMES[Math.min(prestigeCount, THEMES.length - 1)];
+  // Inject CSS overrides
+  document.getElementById('theme-style').textContent = `
+    body { background:${t.bg}; }
+    #tap-btn {
+      background:radial-gradient(circle at 38% 32%,${t.btn1},${t.btn2});
+      box-shadow:0 0 50px rgba(${t.glow},.7),0 0 100px rgba(${t.glow},.25),inset 0 0 30px rgba(255,255,255,.12);
+    }
+    #tap-btn::after { border-color:rgba(${t.glow},.4); animation:pulse-ring 2s ease-in-out infinite; }
+    @keyframes pulse-ring {
+      0%  { transform:scale(1);    opacity:.8; }
+      50% { transform:scale(1.07); opacity:.3; }
+      100%{ transform:scale(1);    opacity:.8; }
+    }
+    .card.can-buy {
+      border-color:rgba(${t.glow},.55);
+      background:rgba(${t.glow},.12);
+      box-shadow:0 0 12px rgba(${t.glow},.2);
+    }
+    #install-yes { background:rgb(${t.glow}); }
+    #toast { background:linear-gradient(135deg,rgb(${t.glow}),${t.btn2}); }
+    #currency { text-shadow:0 0 24px rgba(255,215,0,.6); }
+  `;
+  // Update canvas vars
+  sfBgColor  = t.bg;
+  sfStarGlow = t.stars;
+}
+
+function prestigeFlash(color) {
+  const el = document.createElement('div');
+  el.className = 'theme-flash';
+  el.style.background = color;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ACHIEVEMENTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const ACHIEVEMENTS = [
@@ -801,7 +870,10 @@ function prestige() {
   const badge = document.getElementById('prestige-badge');
   badge.classList.add('show');
   document.getElementById('pb-count').textContent = G.prestigeMul;
-  showToast(`🌀 Big Bang! You now have a permanent ×${G.prestigeMul} multiplier!`);
+  const theme = THEMES[Math.min(G.prestigeCount, THEMES.length-1)];
+  applyTheme(G.prestigeCount);
+  prestigeFlash(theme.flash);
+  showToast(`🌀 Big Bang! Theme: ${theme.name} · ×${G.prestigeMul} permanent bonus!`);
   sndPrestige();
   haptic([30, 15, 30, 15, 50, 15, 80]);
   saveG();
@@ -1022,7 +1094,7 @@ function initStars() {
 }
 
 function drawStars() {
-  sfCtx.fillStyle='#07071a';
+  sfCtx.fillStyle=sfBgColor;
   sfCtx.fillRect(0,0,sfCvs.width,sfCvs.height);
   const now=performance.now()/1000;
   stars.forEach(s=>{
@@ -1030,7 +1102,7 @@ function drawStars() {
     sfCtx.save();
     sfCtx.globalAlpha=a;
     sfCtx.fillStyle='#fff';
-    if(s.r>1.2){sfCtx.shadowBlur=5;sfCtx.shadowColor='#aaaaff';}
+    if(s.r>1.2){sfCtx.shadowBlur=5;sfCtx.shadowColor=sfStarGlow;}
     sfCtx.beginPath();
     sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
     sfCtx.fill();
@@ -1080,6 +1152,8 @@ loadG();
 recalc();
 buildShop();
 renderHeader();
+
+applyTheme(G.prestigeCount);
 
 if (G.prestigeCount > 0) {
   document.getElementById('prestige-badge').classList.add('show');

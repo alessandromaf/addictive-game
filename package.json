@@ -1,0 +1,28 @@
+{
+  "name": "addictive-game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "scripts": {
+    "build": "cp index.html manifest.json icon-192.svg icon-512.svg www/",
+    "sync": "npm run build && npx cap sync"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alessandromaf/addictive-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/alessandromaf/addictive-game/issues"
+  },
+  "homepage": "https://github.com/alessandromaf/addictive-game#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0"
+  }
+}

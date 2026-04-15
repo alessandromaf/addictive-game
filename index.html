@@ -155,17 +155,28 @@ body {
   transition:opacity .4s ease; min-height:1.2em;
 }
 
-/* ── Sound toggle ─────────────────────────────────────── */
-#sound-btn {
-  position:absolute; top:12px; right:12px;
+/* ── Sound + Music toggles ────────────────────────────── */
+#sound-btn, #music-btn {
+  position:absolute; top:12px;
   background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
   border-radius:50%; width:34px; height:34px;
   font-size:1rem; cursor:pointer; color:#fff;
   display:flex; align-items:center; justify-content:center;
-  transition:background .2s;
-  z-index:20;
+  transition:background .2s; z-index:20;
 }
-#sound-btn:active { background:rgba(255,255,255,.18); }
+#sound-btn { right:12px; }
+#music-btn { right:54px; }
+#sound-btn:active, #music-btn:active { background:rgba(255,255,255,.18); }
+
+/* ── Screen shake ─────────────────────────────────────── */
+@keyframes screen-shake {
+  0%,100% { transform:translate(0,0) rotate(0deg); }
+  20%     { transform:translate(-5px, 3px) rotate(-.4deg); }
+  40%     { transform:translate(5px, -3px) rotate(.4deg); }
+  60%     { transform:translate(-4px, 4px) rotate(-.3deg); }
+  80%     { transform:translate(4px, -2px) rotate(.2deg); }
+}
+#main.shake { animation:screen-shake .3s ease-out; }
 
 /* ── Main tap area ────────────────────────────────────── */
 #main {
@@ -354,6 +365,7 @@ body {
   <button id="ach-btn" onclick="openAchievements()" aria-label="Achievements">
     🏆<span id="ach-badge"></span>
   </button>
+  <button id="music-btn" onclick="toggleMusic()" aria-label="Toggle music">🔕</button>
   <button id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound">🔊</button>
   <div id="currency">✨ 0</div>
   <div id="rates">0/sec passive · tap: +1</div>
@@ -435,8 +447,12 @@ function unlockAudio() {
 }
 
 // Unlock on ANY touch across the whole page (catches first interaction reliably)
-document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
-document.addEventListener('touchend',   unlockAudio, { once: true, passive: true });
+function unlockAndStartMusic() {
+  unlockAudio();
+  if (musicOn && !musicNodes) startMusic();
+}
+document.addEventListener('touchstart', unlockAndStartMusic, { once: true, passive: true });
+document.addEventListener('touchend',   unlockAndStartMusic, { once: true, passive: true });
 
 // Re-resume when the app comes back from background (iOS kills context on hide)
 document.addEventListener('visibilitychange', () => {
@@ -503,8 +519,87 @@ function sndPrestige() {
   );
 }
 
+// ── Ambient music engine
+let musicOn    = localStorage.getItem('tu_music') === '1';
+let musicNodes = null;
+
+function startMusic() {
+  if (musicNodes) return;
+  const ctx = getCtx();
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0, ctx.currentTime);
+  master.gain.linearRampToValueAtTime(0.055, ctx.currentTime + 4); // slow fade-in
+  master.connect(ctx.destination);
+
+  // Low-pass filter for warmth
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 320;
+  filter.Q.value = 0.8;
+  filter.connect(master);
+
+  // Breathing LFO on master gain
+  const lfo = ctx.createOscillator();
+  const lfoGain = ctx.createGain();
+  lfo.frequency.value = 0.07;     // ~14s cycle
+  lfoGain.gain.value  = 0.015;
+  lfo.connect(lfoGain);
+  lfoGain.connect(master.gain);
+  lfo.start();
+
+  // Drone layers
+  const layers = [
+    { freq:55,    type:'sawtooth', vol:0.35 }, // deep bass
+    { freq:55.4,  type:'sawtooth', vol:0.3  }, // slight beating
+    { freq:82.5,  type:'sine',     vol:0.4  }, // perfect fifth
+    { freq:110.2, type:'sine',     vol:0.25 }, // octave warmth
+    { freq:164.8, type:'sine',     vol:0.15 }, // upper fifth
+    { freq:220.5, type:'sine',     vol:0.06 }, // shimmer
+  ];
+
+  // Slow detune sweep on first two oscs for evolving quality
+  const oscs = layers.map((l, i) => {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = l.type;
+    osc.frequency.setValueAtTime(l.freq, ctx.currentTime);
+    if (i < 2) {
+      // Slowly sweep +/-3Hz over 20s
+      osc.frequency.linearRampToValueAtTime(l.freq + (i===0?3:-3), ctx.currentTime + 20);
+    }
+    gain.gain.value = l.vol;
+    osc.connect(gain);
+    gain.connect(filter);
+    osc.start();
+    return osc;
+  });
+
+  musicNodes = { master, lfo, oscs };
+}
+
+function stopMusic() {
+  if (!musicNodes) return;
+  const { master, lfo, oscs } = musicNodes;
+  const ctx = getCtx();
+  master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+  setTimeout(() => {
+    try { lfo.stop(); oscs.forEach(o => o.stop()); } catch(e) {}
+    musicNodes = null;
+  }, 1700);
+}
+
+function toggleMusic() {
+  musicOn = !musicOn;
+  localStorage.setItem('tu_music', musicOn ? '1' : '0');
+  document.getElementById('music-btn').textContent = musicOn ? '🎵' : '🔕';
+  if (musicOn) { unlockAudio(); startMusic(); }
+  else stopMusic();
+}
+
 // Initialise sound-btn icon on load
 document.getElementById('sound-btn').textContent = soundOn ? '🔊' : '🔇';
+document.getElementById('music-btn').textContent = musicOn ? '🎵' : '🔕';
+if (musicOn) { /* will start after first user gesture via unlockAudio path */ }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // HAPTICS  (Android only — iOS blocks vibration API)
@@ -796,8 +891,15 @@ function doTap(x, y) {
   checkMilestones();
   checkAchievements();
   bumpCurrency();
-  if (crit) { sndCrit(); haptic([12, 6, 18]); }
-  else       { sndTap();  haptic(8); }
+  if (crit) {
+    sndCrit(); haptic([12, 6, 18]);
+    const main = document.getElementById('main');
+    main.classList.remove('shake');
+    void main.offsetWidth;
+    main.classList.add('shake');
+  } else {
+    sndTap(); haptic(8);
+  }
 }
 
 function checkMilestones() {
@@ -915,8 +1017,14 @@ function cycleTicker() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // RENDER
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let displayedSL = 0;
 function renderHeader() {
-  document.getElementById('currency').textContent = `✨ ${fmt(G.sl)}`;
+  // Lerp displayed value toward real value for smooth counting effect
+  const diff = G.sl - displayedSL;
+  displayedSL += diff * 0.12;
+  if (Math.abs(diff) < 0.5) displayedSL = G.sl;
+
+  document.getElementById('currency').textContent = `✨ ${fmt(displayedSL)}`;
   document.getElementById('rates').textContent =
     `${fmt(G.passRate)}/sec · tap: +${fmt(G.tapPow)}${G.critChance?` · crit: ${Math.round(G.critChance*100)}%`:''}`;
 }

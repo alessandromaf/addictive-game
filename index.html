@@ -314,6 +314,21 @@ function getCtx() {
   return audioCtx;
 }
 
+// iOS Safari requires a silent buffer played inside a touch event to unlock audio
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  try {
+    const ctx = getCtx();
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    audioUnlocked = true;
+  } catch(e) {}
+}
+
 // Generic tone builder
 function tone(freq, type, startVol, endVol, duration, startTime, dest) {
   const ctx  = getCtx();
@@ -818,6 +833,7 @@ function showToast(msg) {
 const btn = document.getElementById('tap-btn');
 
 function handleTap(x, y) {
+  unlockAudio();
   doTap(x, y);
   btn.classList.remove('tap-pop');
   void btn.offsetWidth; // reflow to restart

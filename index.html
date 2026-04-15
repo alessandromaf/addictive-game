@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Cat Collector 🐱</title>
+<!-- BUILD v4 -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff9a3c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1365,6 +1366,27 @@ function buildShop() {
     list.appendChild(hint);
   }
 
+  // Remove Ads card on boost tab
+  if (activeShopCat === 'boost' && !hasRemovedAds()) {
+    const sep = document.createElement('div');
+    sep.className = 'shop-section-label';
+    sep.textContent = '👑 PREMIUM';
+    list.appendChild(sep);
+    const premCard = document.createElement('div');
+    premCard.className = 'card';
+    premCard.style.cssText = 'border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.06)';
+    premCard.innerHTML = `
+      <div class="card-icon">👑</div>
+      <div class="card-body">
+        <div class="card-name">Remove Ads</div>
+        <div class="card-desc">Never see ads again. One-time purchase.</div>
+      </div>
+      <div class="card-right"><div class="card-cost" style="color:#ffd700">$2.99</div></div>
+    `;
+    premCard.addEventListener('click', purchaseRemoveAds);
+    list.appendChild(premCard);
+  }
+
   // Highlight tabs that have affordable items
   document.querySelectorAll('.stab').forEach(btn=>{
     const cat = btn.dataset.cat;
@@ -1749,32 +1771,7 @@ setInterval(() => {
   }
 }, 1000);
 
-// ── Add Remove Ads card to shop (only on Boosts tab)
-const _buildShop = buildShop;
-buildShop = function() {
-  _buildShop();
-  if (hasRemovedAds() || activeShopCat !== 'boost') return;
-  const list = document.getElementById('shop-list');
-  const sep  = document.createElement('div');
-  sep.className = 'shop-section-label';
-  sep.textContent = '👑 PREMIUM';
-  list.appendChild(sep);
-
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.style.borderColor = 'rgba(255,215,0,.4)';
-  card.style.background  = 'rgba(255,215,0,.06)';
-  card.innerHTML = `
-    <div class="card-icon">👑</div>
-    <div class="card-body">
-      <div class="card-name">Remove Ads</div>
-      <div class="card-desc">Never see ads again. One-time purchase.</div>
-    </div>
-    <div class="card-right"><div class="card-cost" style="color:#ffd700">$2.99</div></div>
-  `;
-  card.addEventListener('click', purchaseRemoveAds);
-  list.appendChild(card);
-};
+// (Remove Ads card is now inlined inside buildShop)
 
 // ── Init
 G.boostMul = isBoostActive() ? 2 : 1;

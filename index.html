@@ -786,44 +786,44 @@ function startMusic() {
   const ctx = getCtx();
   const master = ctx.createGain();
   master.gain.setValueAtTime(0, ctx.currentTime);
-  master.gain.linearRampToValueAtTime(0.055, ctx.currentTime + 4); // slow fade-in
+  master.gain.linearRampToValueAtTime(0.07, ctx.currentTime + 4); // slow fade-in
   master.connect(ctx.destination);
 
-  // Low-pass filter for warmth
+  // Gentle high-shelf to keep it warm but not muffled
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = 600;
-  filter.Q.value = 0.8;
+  filter.frequency.value = 1800;
+  filter.Q.value = 0.5;
   filter.connect(master);
 
-  // Breathing LFO on master gain
+  // Warm purr-like LFO on master gain — slow breath, ~8s cycle
   const lfo = ctx.createOscillator();
   const lfoGain = ctx.createGain();
-  lfo.frequency.value = 0.12;     // ~14s cycle
-  lfoGain.gain.value  = 0.015;
+  lfo.frequency.value = 0.13;
+  lfoGain.gain.value  = 0.018;
   lfo.connect(lfoGain);
   lfoGain.connect(master.gain);
   lfo.start();
 
-  // Drone layers
+  // Cozy cat-themed layers: warm C-major chord (C4-E4-G4-C5) with gentle harmonics
+  // Sounds like a soft music box / purring lullaby, not cold space drone
   const layers = [
-    { freq:220,   type:'sine',     vol:0.3  },
-    { freq:220.4, type:'sine',     vol:0.25 },
-    { freq:330,   type:'sine',     vol:0.35 },
-    { freq:440.2, type:'sine',     vol:0.2  },
-    { freq:659.3, type:'sine',     vol:0.12 },
-    { freq:880.5, type:'sine',     vol:0.05 },
+    { freq:261.6, type:'sine',     vol:0.28 }, // C4 — warm bass root
+    { freq:329.6, type:'sine',     vol:0.22 }, // E4 — major third, brightens it
+    { freq:392.0, type:'sine',     vol:0.20 }, // G4 — fifth, cozy harmony
+    { freq:523.2, type:'sine',     vol:0.14 }, // C5 — octave, sparkle
+    { freq:261.8, type:'triangle', vol:0.08 }, // C4 triangle — adds purr texture
+    { freq:784.0, type:'sine',     vol:0.04 }, // G5 — soft high shimmer
   ];
 
-  // Slow detune sweep on first two oscs for evolving quality
   const oscs = layers.map((l, i) => {
     const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = l.type;
     osc.frequency.setValueAtTime(l.freq, ctx.currentTime);
+    // Very gentle pitch sway on first two for a living, breathing feel
     if (i < 2) {
-      // Slowly sweep +/-3Hz over 20s
-      osc.frequency.linearRampToValueAtTime(l.freq + (i===0?5:-5), ctx.currentTime + 15);
+      osc.frequency.linearRampToValueAtTime(l.freq + (i===0 ? 1.5 : -1.5), ctx.currentTime + 12);
     }
     gain.gain.value = l.vol;
     osc.connect(gain);
@@ -1495,39 +1495,55 @@ function drawParticles() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // STARFIELD
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// BACKGROUND — floating paw prints & fish for cat theme
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const sfCvs = document.getElementById('starfield');
 const sfCtx = sfCvs.getContext('2d');
 let stars = [];
+
+// Symbols that drift gently across the background
+const BG_SYMBOLS = ['🐾','🐾','🐾','🐟','🐟','✨','🐾','🐟'];
 
 function initStars() {
   sfCvs.width  = window.innerWidth;
   sfCvs.height = window.innerHeight;
   stars = [];
-  for (let i=0;i<160;i++) {
+  for (let i=0;i<28;i++) {
     stars.push({
-      x:Math.random()*sfCvs.width,
-      y:Math.random()*sfCvs.height,
-      r:Math.random()*1.8,
-      spd:.08+Math.random()*.25,
-      base:.3+Math.random()*.7,
-      phase:Math.random()*Math.PI*2,
+      x: Math.random()*sfCvs.width,
+      y: Math.random()*sfCvs.height,
+      sym: BG_SYMBOLS[Math.floor(Math.random()*BG_SYMBOLS.length)],
+      sz:  10 + Math.random()*18,          // font size 10–28px
+      spd: 0.006 + Math.random()*0.012,    // drift speed
+      dx:  (Math.random()-.5)*0.3,         // gentle horizontal drift
+      base: 0.04 + Math.random()*0.10,     // opacity 4–14%
+      phase: Math.random()*Math.PI*2,
+      rot: (Math.random()-.5)*0.5,         // slight rotation offset
     });
   }
 }
 
 function drawStars() {
-  sfCtx.fillStyle=sfBgColor;
-  sfCtx.fillRect(0,0,sfCvs.width,sfCvs.height);
-  const now=performance.now()/1000;
+  sfCtx.fillStyle = sfBgColor;
+  sfCtx.fillRect(0, 0, sfCvs.width, sfCvs.height);
+  const now = performance.now()/1000;
   stars.forEach(s=>{
-    const a=s.base*(.7+.3*Math.sin(now*s.spd+s.phase));
+    // Gentle float upward, wrap around
+    s.y -= s.spd;
+    s.x += s.dx * 0.3;
+    if (s.y < -40)  { s.y = sfCvs.height + 20; s.x = Math.random()*sfCvs.width; }
+    if (s.x < -40)  s.x = sfCvs.width + 20;
+    if (s.x > sfCvs.width+40) s.x = -20;
+
+    const a = s.base * (0.6 + 0.4*Math.sin(now*0.4 + s.phase));
     sfCtx.save();
-    sfCtx.globalAlpha=a;
-    sfCtx.fillStyle='#fff';
-    if(s.r>1.2){sfCtx.shadowBlur=5;sfCtx.shadowColor=sfStarGlow;}
-    sfCtx.beginPath();
-    sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    sfCtx.fill();
+    sfCtx.globalAlpha = a;
+    sfCtx.font = `${s.sz}px serif`;
+    sfCtx.textAlign = 'center';
+    sfCtx.textBaseline = 'middle';
+    sfCtx.translate(s.x, s.y);
+    sfCtx.rotate(Math.sin(now*0.2 + s.phase) * s.rot);
+    sfCtx.fillText(s.sym, 0, 0);
     sfCtx.restore();
   });
   requestAnimationFrame(drawStars);

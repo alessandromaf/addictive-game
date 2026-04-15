@@ -532,9 +532,9 @@ body {
 
 <div id="shop">
   <div id="shop-tabs">
-    <button class="stab active" data-cat="tap">🤚 Upgrades</button>
-    <button class="stab" data-cat="auto">🐱 Cats</button>
-    <button class="stab" data-cat="boost">✨ Boosts</button>
+    <button class="stab" data-cat="tap">🤚 Tap</button>
+    <button class="stab active" data-cat="auto">🐱 Cats</button>
+    <button class="stab" data-cat="boost">✨ Power</button>
     <button class="stab" data-cat="crit">🍀 Luck</button>
   </div>
   <div id="shop-list"></div>
@@ -1299,7 +1299,7 @@ function bumpCurrency() {
   currBumpTO = setTimeout(()=>el.classList.remove('bump'), 120);
 }
 
-let activeShopCat = 'tap';
+let activeShopCat = 'auto';
 
 function initShopTabs() {
   document.querySelectorAll('.stab').forEach(btn=>{
@@ -1330,9 +1330,9 @@ function buildShop() {
     card.className = 'card' + (maxed?' maxed':!unlocked?' locked':canBuy?' can-buy':'');
     card.dataset.id = item.id;
 
-    const costTxt = maxed ? '✓' : `⭐ ${fmt(c)}`;
+    const costTxt = maxed ? '✓ Maxed' : !unlocked ? '🔒' : `⭐ ${fmt(c)}`;
     const descTxt = (!unlocked && item.req)
-      ? `Need ${item.req.n} ${ITEMS.find(i=>i.id===item.req.id)?.name}`
+      ? `🔒 Need ${item.req.n}× ${ITEMS.find(i=>i.id===item.req.id)?.name} first`
       : item.desc;
 
     card.innerHTML = `
@@ -1348,6 +1348,22 @@ function buildShop() {
     if (!maxed && unlocked) card.addEventListener('click', ()=>buy(item.id));
     list.appendChild(card);
   });
+
+  // Hint on Cats tab when none purchased yet
+  if (activeShopCat === 'auto' && Object.keys(G.bought).filter(k=>k.startsWith('a')).length === 0) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'text-align:center;padding:4px 10px 12px;font-size:.78rem;color:#4a4a7a;line-height:1.5;';
+    hint.textContent = '💡 Buy cats to earn treats automatically — even while you\'re away!';
+    list.prepend(hint);
+  }
+
+  // If power tab and all locked, show a helpful hint
+  if (activeShopCat === 'boost' && items.every(i=>!isUnlocked(i))) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'text-align:center;padding:20px 10px;font-size:.8rem;color:#4a4a7a;line-height:1.6;';
+    hint.textContent = '💡 Buy 5 of a cat on the 🐱 Cats tab to unlock power multipliers here.';
+    list.appendChild(hint);
+  }
 
   // Highlight tabs that have affordable items
   document.querySelectorAll('.stab').forEach(btn=>{

@@ -158,6 +158,56 @@ body {
 .ach-name { font-size:.75rem; font-weight:700; margin-bottom:2px; }
 .ach-desc { font-size:.65rem; color:#7070a0; line-height:1.3; }
 
+/* ── Rewarded ad button ───────────────────────────────── */
+#ad-btn {
+  margin-top:10px;
+  background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,145,0,.1));
+  border:1px solid rgba(255,215,0,.35);
+  border-radius:20px; padding:7px 18px;
+  color:#ffd700; font-size:.82rem; font-weight:700;
+  cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:6px;
+}
+#ad-btn:active { transform:scale(.96); }
+#ad-btn.on-cooldown { opacity:.4; cursor:default; }
+
+/* ── Boost active indicator ───────────────────────────── */
+#boost-indicator {
+  display:none;
+  background:linear-gradient(135deg,rgba(255,107,107,.2),rgba(255,215,0,.1));
+  border:1px solid rgba(255,107,107,.4);
+  border-radius:12px; padding:5px 12px; margin-top:6px;
+  font-size:.75rem; font-weight:700; color:#ff6b6b;
+  text-align:center;
+}
+
+/* ── Ad overlay (mock) ────────────────────────────────── */
+#ad-overlay {
+  display:none;
+  position:fixed; inset:0; z-index:600;
+  background:#000;
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:16px;
+}
+#ad-overlay.open { display:flex; }
+#ad-skip-timer {
+  position:absolute; top:16px; right:16px;
+  background:rgba(255,255,255,.1); border-radius:20px;
+  padding:6px 14px; font-size:.85rem; color:#aaa;
+}
+#ad-fake-content {
+  width:min(320px,85vw); aspect-ratio:16/9;
+  background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
+  border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:1rem; color:#555; border:1px solid rgba(255,255,255,.08);
+}
+#ad-close-btn {
+  display:none;
+  background:linear-gradient(135deg,#ffd700,#ff9100);
+  color:#000; border:none; border-radius:12px;
+  padding:12px 32px; font-size:1rem; font-weight:800; cursor:pointer;
+}
+
 /* ── Flavor ticker ────────────────────────────────────── */
 #ticker {
   font-size:.75rem; color:#4040a0; font-style:italic;
@@ -418,7 +468,15 @@ body {
     <span class="star-emoji">✨</span>
   </button>
   <div id="tap-hint">tap to collect starlight</div>
+  <button id="ad-btn" onclick="watchAd()">🎬 Watch Ad → <b>2× for 2h</b></button>
+  <div id="boost-indicator">⚡ 2× BOOST ACTIVE — <span id="boost-timer"></span></div>
   <div id="ticker">In the beginning, there was a tap.</div>
+</div>
+
+<div id="ad-overlay">
+  <div id="ad-skip-timer">Skip in <span id="ad-countdown">5</span>s</div>
+  <div id="ad-fake-content">📺 Ad placeholder — integrate AdMob here</div>
+  <button id="ad-close-btn" onclick="closeAd()">✨ Claim 2× Boost!</button>
 </div>
 
 <button id="prestige-btn" onclick="prestige()">
@@ -998,6 +1056,11 @@ function recalc() {
   if (G.bought['c1']) G.critChance += .05;
   if (G.bought['c2']) G.critChance += .10;
   if (G.bought['c3']) G.critMul = 15;
+
+  // ad boost multiplier
+  const bMul = (typeof isBoostActive === 'function' && isBoostActive()) ? 2 : 1;
+  G.tapPow   *= bMul;
+  G.passRate *= bMul;
 }
 
 function buy(id) {
@@ -1475,6 +1538,163 @@ document.getElementById('install-no')?.addEventListener('click', () => {
   hideInstallBanner();
   localStorage.setItem('pwa_installed','1');
 });
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MONETIZATION — Rewarded Ads + Remove Ads IAP
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const ADS_REMOVED_KEY  = 'tu_no_ads';
+const BOOST_KEY        = 'tu_boost_until';
+const BOOST_DURATION   = 2 * 60 * 60 * 1000; // 2 hours
+const AD_COOLDOWN      = 30 * 60 * 1000;      // 30 min between ads
+const AD_COOLDOWN_KEY  = 'tu_ad_cooldown';
+
+// ── Remove Ads state
+function hasRemovedAds() {
+  return localStorage.getItem(ADS_REMOVED_KEY) === '1';
+}
+
+function purchaseRemoveAds() {
+  // TODO: replace with real Capacitor Purchases / StoreKit call
+  // For now: simulate a successful purchase
+  if (!confirm('Remove Ads — $2.99\n\nThis is a placeholder. Integrate with your payment provider to charge real money.\n\nSimulate purchase now?')) return;
+  localStorage.setItem(ADS_REMOVED_KEY, '1');
+  document.getElementById('ad-btn').style.display = 'none';
+  showToast('👑 Ads removed! Thanks for supporting the game!');
+  sndPrestige();
+  haptic([20,10,30]);
+  buildShop(); // refresh to hide remove-ads card
+}
+
+// ── Boost state
+function getBoostSecondsLeft() {
+  const until = parseInt(localStorage.getItem(BOOST_KEY) || '0');
+  return Math.max(0, Math.floor((until - Date.now()) / 1000));
+}
+
+function isBoostActive() { return getBoostSecondsLeft() > 0; }
+
+function activateBoost() {
+  localStorage.setItem(BOOST_KEY, Date.now() + BOOST_DURATION);
+  G.boostMul = 2;
+  recalc();
+  updateBoostUI();
+  showToast('⚡ 2× boost active for 2 hours!');
+}
+
+function updateBoostUI() {
+  const secs = getBoostSecondsLeft();
+  const btn  = document.getElementById('ad-btn');
+  const ind  = document.getElementById('boost-indicator');
+  const timer= document.getElementById('boost-timer');
+
+  if (hasRemovedAds()) { btn.style.display = 'none'; ind.style.display = 'none'; return; }
+
+  if (secs > 0) {
+    const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+    const label = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+    ind.style.display = 'block';
+    timer.textContent = label + ' remaining';
+    btn.style.display = 'none';
+  } else {
+    ind.style.display = 'none';
+    G.boostMul = 1;
+    // Check ad cooldown
+    const cooldownLeft = parseInt(localStorage.getItem(AD_COOLDOWN_KEY)||'0') - Date.now();
+    if (cooldownLeft > 0) {
+      const m = Math.ceil(cooldownLeft/60000);
+      btn.textContent = `🎬 Next ad in ${m}m`;
+      btn.classList.add('on-cooldown');
+    } else {
+      btn.innerHTML = '🎬 Watch Ad → <b>2× for 2h</b>';
+      btn.classList.remove('on-cooldown');
+    }
+    btn.style.display = 'flex';
+  }
+}
+
+// ── Ad flow
+let adTimer = null;
+
+function watchAd() {
+  if (hasRemovedAds()) return;
+  const cooldownLeft = parseInt(localStorage.getItem(AD_COOLDOWN_KEY)||'0') - Date.now();
+  if (cooldownLeft > 0) return;
+  if (isBoostActive()) return;
+
+  // TODO: Replace mock with real AdMob call:
+  // const { AdMob } = window.Capacitor?.Plugins || {};
+  // if (AdMob) { showRewardedAd(); return; }
+
+  // Mock ad: 5s countdown then reward
+  const overlay = document.getElementById('ad-overlay');
+  const countdown = document.getElementById('ad-countdown');
+  const closeBtn  = document.getElementById('ad-close-btn');
+  overlay.classList.add('open');
+  closeBtn.style.display = 'none';
+  let secs = 5;
+  countdown.textContent = secs;
+
+  adTimer = setInterval(() => {
+    secs--;
+    countdown.textContent = secs;
+    if (secs <= 0) {
+      clearInterval(adTimer);
+      document.getElementById('ad-skip-timer').textContent = '';
+      closeBtn.style.display = 'block';
+    }
+  }, 1000);
+}
+
+function closeAd() {
+  clearInterval(adTimer);
+  document.getElementById('ad-overlay').classList.remove('open');
+  document.getElementById('ad-skip-timer').textContent = `Skip in <span id="ad-countdown">5</span>s`;
+  localStorage.setItem(AD_COOLDOWN_KEY, Date.now() + AD_COOLDOWN);
+  activateBoost();
+}
+
+
+// ── Boost tick — update UI every second, expire automatically
+setInterval(() => {
+  updateBoostUI();
+  if (!isBoostActive() && G.boostMul === 2) {
+    G.boostMul = 1;
+    recalc();
+    showToast('⚡ 2× boost expired. Watch an ad to renew!');
+  }
+}, 1000);
+
+// ── Add Remove Ads card to shop
+const _buildShop = buildShop;
+buildShop = function() {
+  _buildShop();
+  if (hasRemovedAds()) return;
+  const list = document.getElementById('shop-list');
+  const sep  = document.createElement('div');
+  sep.className = 'shop-section-label';
+  sep.textContent = '👑 PREMIUM';
+  list.appendChild(sep);
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.borderColor = 'rgba(255,215,0,.4)';
+  card.style.background  = 'rgba(255,215,0,.06)';
+  card.innerHTML = `
+    <div class="card-icon">👑</div>
+    <div class="card-body">
+      <div class="card-name">Remove Ads</div>
+      <div class="card-desc">Never see ads again. One-time purchase.</div>
+    </div>
+    <div class="card-right"><div class="card-cost" style="color:#ffd700">$2.99</div></div>
+  `;
+  card.addEventListener('click', purchaseRemoveAds);
+  list.appendChild(card);
+};
+
+// ── Init
+G.boostMul = isBoostActive() ? 2 : 1;
+updateBoostUI();
 
 // ── Reset helper (for dev) — triple-tap the rates line
 let devTaps=0,devTO;

@@ -325,6 +325,37 @@ body {
   50%      { box-shadow:0 0 40px rgba(255,215,0,.8); }
 }
 
+/* ── Notification permission banner ──────────────────── */
+#notif-banner {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0; z-index:301;
+  background:linear-gradient(135deg,rgba(20,10,40,.98),rgba(10,10,30,.98));
+  border-top:1px solid rgba(255,215,0,.3);
+  padding:14px 16px;
+  align-items:center; gap:12px;
+  box-shadow:0 -4px 20px rgba(255,215,0,.15);
+  animation:slide-up .4s ease-out;
+}
+@keyframes slide-up {
+  from { transform:translateY(100%); }
+  to   { transform:translateY(0); }
+}
+#notif-banner .nb-icon { font-size:2rem; flex-shrink:0; }
+#notif-banner .nb-text { flex:1; font-size:.85rem; line-height:1.4; }
+#notif-banner .nb-text strong { display:block; color:#ffd700; margin-bottom:2px; }
+#notif-banner .nb-text span { color:#7070a0; font-size:.77rem; }
+#notif-banner .nb-btns { display:flex; gap:8px; flex-shrink:0; }
+#notif-yes {
+  background:linear-gradient(135deg,#ffd700,#ff9100);
+  color:#000; border:none; border-radius:10px;
+  padding:8px 14px; font-size:.85rem; font-weight:800; cursor:pointer;
+}
+#notif-no {
+  background:transparent; color:#5050a0;
+  border:1px solid rgba(255,255,255,.1); border-radius:10px;
+  padding:8px 10px; font-size:.85rem; cursor:pointer;
+}
+
 /* ── Toast ────────────────────────────────────────────── */
 /* ── Install banner ───────────────────────────────────── */
 #install-banner {
@@ -400,6 +431,18 @@ body {
 
 <div id="toast"></div>
 
+<div id="notif-banner">
+  <div class="nb-icon">🔔</div>
+  <div class="nb-text">
+    <strong>Never miss your earnings</strong>
+    <span>Get notified when your starlight is waiting</span>
+  </div>
+  <div class="nb-btns">
+    <button id="notif-yes">Allow</button>
+    <button id="notif-no">Later</button>
+  </div>
+</div>
+
 <div id="ach-drawer">
   <div id="ach-header">
     <h2>🏆 Achievements</h2>
@@ -468,6 +511,99 @@ document.addEventListener('touchend',   unlockAndStartMusic, { once: true, passi
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && audioCtx) audioCtx.resume();
 });
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PUSH NOTIFICATIONS (Capacitor native + Web fallback)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const isNative       = !!(window.Capacitor?.isNativePlatform?.());
+const LocalNotifs    = window.Capacitor?.Plugins?.LocalNotifications;
+const NOTIF_ID       = 42;
+const NOTIF_DELAY_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+async function requestNotifPermission() {
+  try {
+    if (isNative && LocalNotifs) {
+      const { display } = await LocalNotifs.requestPermissions();
+      return display === 'granted';
+    } else if ('Notification' in window) {
+      const perm = await Notification.requestPermission();
+      return perm === 'granted';
+    }
+  } catch(e) {}
+  return false;
+}
+
+async function hasNotifPermission() {
+  try {
+    if (isNative && LocalNotifs) {
+      const { display } = await LocalNotifs.checkPermissions();
+      return display === 'granted';
+    }
+    return 'Notification' in window && Notification.permission === 'granted';
+  } catch(e) { return false; }
+}
+
+async function scheduleReturnNotif() {
+  if (!(await hasNotifPermission())) return;
+  try {
+    if (isNative && LocalNotifs) {
+      // Cancel any previous, then schedule fresh
+      await LocalNotifs.cancel({ notifications: [{ id: NOTIF_ID }] });
+      await LocalNotifs.schedule({
+        notifications: [{
+          id: NOTIF_ID,
+          title: '✨ Tap Universe',
+          body: `Your offline starlight is piling up! Come collect it.`,
+          schedule: { at: new Date(Date.now() + NOTIF_DELAY_MS) },
+          smallIcon: 'ic_launcher_foreground',
+          channelId: 'earnings',
+        }]
+      });
+    }
+  } catch(e) {}
+}
+
+async function cancelReturnNotif() {
+  try {
+    if (isNative && LocalNotifs) {
+      await LocalNotifs.cancel({ notifications: [{ id: NOTIF_ID }] });
+    }
+  } catch(e) {}
+}
+
+// Schedule when app hides, cancel when it returns
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') scheduleReturnNotif();
+  else cancelReturnNotif();
+});
+
+// ── Notification permission banner logic
+function showNotifBanner() {
+  if (localStorage.getItem('notif_asked')) return;
+  if ('Notification' in window && Notification.permission === 'granted') return;
+  document.getElementById('notif-banner').style.display = 'flex';
+}
+
+function hideNotifBanner() {
+  document.getElementById('notif-banner').style.display = 'none';
+}
+
+document.getElementById('notif-yes').addEventListener('click', async () => {
+  hideNotifBanner();
+  localStorage.setItem('notif_asked', '1');
+  const granted = await requestNotifPermission();
+  if (granted) showToast('🔔 Notifications enabled!');
+});
+
+document.getElementById('notif-no').addEventListener('click', () => {
+  hideNotifBanner();
+  localStorage.setItem('notif_asked', '1');
+});
+
+// Ask after 2 minutes of playtime (non-intrusive)
+setTimeout(() => {
+  if (!localStorage.getItem('notif_asked')) showNotifBanner();
+}, 2 * 60 * 1000);
 
 // Generic tone builder
 function tone(freq, type, startVol, endVol, duration, startTime, dest) {

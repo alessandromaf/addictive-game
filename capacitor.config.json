@@ -1,5 +1,21 @@
 {
   "appId": "com.tapuniverse.app",
   "appName": "Tap Universe",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_launcher_foreground",
+      "iconColor": "#7b4fff",
+      "sound": "default",
+      "channels": [
+        {
+          "id": "earnings",
+          "name": "Offline Earnings",
+          "description": "Notifies when your offline starlight is ready",
+          "importance": 3,
+          "visibility": 1
+        }
+      ]
+    }
+  }
 }

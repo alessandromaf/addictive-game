@@ -1,4 +1,4 @@
-const CACHE = 'tap-universe-v4';
+const CACHE = 'tap-universe-v5';
 const STATIC = ['./manifest.json', './icon-192.svg', './icon-512.svg'];
 
 // Install: pre-cache static assets only (NOT index.html)

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Cat Collector 🐱</title>
-<!-- BUILD v4 -->
+<!-- BUILD v5 -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff9a3c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -535,7 +535,7 @@ body {
 <div id="shop">
   <div id="shop-tabs">
     <button class="stab" data-cat="tap">🤚 Tap</button>
-    <button class="stab active" data-cat="auto">🐱 Cats</button>
+    <button class="stab active" data-cat="auto">🐾 Helpers</button>
     <button class="stab" data-cat="boost">✨ Power</button>
     <button class="stab" data-cat="crit">🍀 Luck</button>
   </div>
@@ -1355,7 +1355,7 @@ function buildShop() {
   if (activeShopCat === 'auto' && Object.keys(G.bought).filter(k=>k.startsWith('a')).length === 0) {
     const hint = document.createElement('div');
     hint.style.cssText = 'text-align:center;padding:4px 10px 12px;font-size:.78rem;color:#4a4a7a;line-height:1.5;';
-    hint.textContent = '💡 Buy cats to earn treats automatically — even while you\'re away!';
+    hint.textContent = '💡 Hire helpers to earn 🐟 treats automatically — even while you\'re away!';
     list.prepend(hint);
   }
 
@@ -1363,7 +1363,7 @@ function buildShop() {
   if (activeShopCat === 'boost' && items.every(i=>!isUnlocked(i))) {
     const hint = document.createElement('div');
     hint.style.cssText = 'text-align:center;padding:20px 10px;font-size:.8rem;color:#4a4a7a;line-height:1.6;';
-    hint.textContent = '💡 Buy 5 of a cat on the 🐱 Cats tab to unlock power multipliers here.';
+    hint.textContent = '💡 Hire 5 of a helper on the 🐾 Helpers tab to unlock power multipliers here.';
     list.appendChild(hint);
   }
 

@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#07071a"/>
+  <rect width="512" height="512" rx="100" fill="#1a1009"/>
   <circle cx="256" cy="256" r="190" fill="url(#g)" opacity="0.95"/>
   <defs>
     <radialGradient id="g" cx="38%" cy="32%" r="70%">
-      <stop offset="0%" stop-color="#9b6fff"/>
-      <stop offset="100%" stop-color="#3a0ca3"/>
+      <stop offset="0%" stop-color="#ff9a3c"/>
+      <stop offset="100%" stop-color="#c45e00"/>
     </radialGradient>
   </defs>
-  <circle cx="256" cy="256" r="196" fill="none" stroke="#7b4fff" stroke-width="6" opacity="0.4"/>
-  <text x="256" y="316" font-size="190" text-anchor="middle" font-family="serif">✨</text>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#ff9a3c" stroke-width="6" opacity="0.4"/>
+  <text x="256" y="316" font-size="190" text-anchor="middle" font-family="serif">🐱</text>
 </svg>

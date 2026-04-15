@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Cat Collector 🐱</title>
-<!-- BUILD v5 -->
+<!-- BUILD v6 -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff9a3c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -45,34 +45,49 @@ body {
 #starfield { z-index:0; }
 #particles { z-index:5; }
 
-/* ── Header ───────────────────────────────────────────── */
+/* ── Header — single compact row ─────────────────────── */
 #header {
   position:relative; z-index:10;
-  padding:14px 16px 8px;
-  text-align:center;
-  background:transparent;
+  display:flex; align-items:center;
+  padding:0 12px;
+  padding-top:env(safe-area-inset-top);  /* iPhone notch */
+  height:calc(52px + env(safe-area-inset-top));
+  flex-shrink:0;
 }
 
+/* Left slot: achievements */
+#ach-btn-wrap { flex:0 0 auto; }
+
+/* Centre slot: currency + rates stacked */
+#header-center {
+  flex:1; text-align:center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1px;
+}
+
+/* Right slot: music + sound */
+#header-right { flex:0 0 auto; display:flex; gap:6px; }
+
 #currency {
-  font-size:2.2rem; font-weight:800;
+  font-size:1.55rem; font-weight:800;
   color:#ffd700;
-  text-shadow:0 0 24px rgba(255,215,0,.6);
-  letter-spacing:1px;
+  text-shadow:0 0 18px rgba(255,215,0,.55);
+  letter-spacing:.5px;
   transition:transform .08s;
+  line-height:1;
 }
 #currency.bump { transform:scale(1.08); }
 #rates {
-  font-size:.82rem; color:#a080c0;
-  margin-top:3px;
-  text-shadow:0 1px 6px rgba(0,0,0,.8);
+  font-size:.7rem; color:#a080c0;
+  text-shadow:0 1px 4px rgba(0,0,0,.9);
+  line-height:1;
 }
 #prestige-badge {
   display:inline-block;
   background:linear-gradient(135deg,#ff6b6b,#ffd700);
   color:#000;
-  font-size:.7rem; font-weight:700;
-  padding:2px 8px; border-radius:20px;
-  margin-top:4px;
+  font-size:.6rem; font-weight:700;
+  padding:1px 6px; border-radius:20px;
   opacity:0; transition:opacity .4s;
 }
 #prestige-badge.show { opacity:1; }
@@ -90,12 +105,13 @@ body {
 
 /* ── Achievements button ──────────────────────────────── */
 #ach-btn {
-  position:absolute; top:12px; left:12px;
+  position:relative;
   background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
-  border-radius:50%; width:34px; height:34px;
+  border-radius:50%; width:36px; height:36px;
   font-size:1rem; cursor:pointer; color:#fff;
   display:flex; align-items:center; justify-content:center;
   transition:background .2s; z-index:20;
+  flex-shrink:0;
 }
 #ach-btn:active { background:rgba(255,255,255,.18); }
 #ach-badge {
@@ -226,15 +242,13 @@ body {
 
 /* ── Sound + Music toggles ────────────────────────────── */
 #sound-btn, #music-btn {
-  position:absolute; top:12px;
   background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
-  border-radius:50%; width:34px; height:34px;
+  border-radius:50%; width:36px; height:36px;
   font-size:1rem; cursor:pointer; color:#fff;
   display:flex; align-items:center; justify-content:center;
   transition:background .2s; z-index:20;
+  flex-shrink:0;
 }
-#sound-btn { right:12px; }
-#music-btn { right:54px; }
 #sound-btn:active, #music-btn:active { background:rgba(255,255,255,.18); }
 
 /* ── Screen shake ─────────────────────────────────────── */
@@ -330,7 +344,7 @@ body {
 #shop-tabs { flex-shrink:0; }
 #shop-list {
   flex:1; overflow-y:auto;
-  padding:4px 0 20px;
+  padding:4px 0 calc(20px + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
 }
@@ -499,14 +513,20 @@ body {
 <canvas id="particles"></canvas>
 
 <div id="header">
-  <button id="ach-btn" onclick="openAchievements()" aria-label="Achievements">
-    🏆<span id="ach-badge"></span>
-  </button>
-  <button id="music-btn" onclick="toggleMusic()" aria-label="Toggle music">🔕</button>
-  <button id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound">🔊</button>
-  <div id="currency">🐟 0</div>
-  <div id="rates">0 treats/sec · pet: +1</div>
-  <div id="prestige-badge">🐾 ×<span id="pb-count">2</span></div>
+  <div id="ach-btn-wrap">
+    <button id="ach-btn" onclick="openAchievements()" aria-label="Achievements">
+      🏆<span id="ach-badge"></span>
+    </button>
+  </div>
+  <div id="header-center">
+    <div id="currency">🐟 0</div>
+    <div id="rates">0 treats/sec · pet: +1</div>
+    <div id="prestige-badge">🐾 ×<span id="pb-count">2</span></div>
+  </div>
+  <div id="header-right">
+    <button id="music-btn" onclick="toggleMusic()" aria-label="Toggle music">🔕</button>
+    <button id="sound-btn" onclick="toggleSound()" aria-label="Toggle sound">🔊</button>
+  </div>
 </div>
 
 <div id="main">

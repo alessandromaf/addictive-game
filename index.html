@@ -66,14 +66,17 @@ body {
 #header-right { flex:0 0 80px; display:flex; gap:6px; justify-content:flex-end; align-items:center; }
 
 #currency {
-  font-size:2rem; font-weight:800;
+  font-size:2.6rem; font-weight:900;
   color:#ffd700;
-  text-shadow:0 2px 16px rgba(255,215,0,.7);
+  text-shadow:0 2px 24px rgba(255,215,0,.8), 0 0 48px rgba(255,215,0,.3);
   letter-spacing:.5px;
-  transition:transform .08s;
+  transition:transform .1s ease-out, text-shadow .1s ease-out;
   line-height:1;
 }
-#currency.bump { transform:scale(1.08); }
+#currency.bump {
+  transform:scale(1.14);
+  text-shadow:0 2px 32px rgba(255,215,0,1), 0 0 64px rgba(255,215,0,.6), 0 0 96px rgba(255,200,0,.3);
+}
 #rates {
   font-size:.7rem; color:#a080c0;
   text-shadow:0 1px 4px rgba(0,0,0,.9);
@@ -1316,7 +1319,7 @@ function bumpCurrency() {
   const el = document.getElementById('currency');
   el.classList.add('bump');
   clearTimeout(currBumpTO);
-  currBumpTO = setTimeout(()=>el.classList.remove('bump'), 120);
+  currBumpTO = setTimeout(()=>el.classList.remove('bump'), 200);
 }
 
 let activeShopCat = 'auto';

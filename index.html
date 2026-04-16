@@ -277,14 +277,14 @@ body {
   position:relative; z-index:10;
   flex:1; display:flex;
   flex-direction:column;
-  align-items:center; justify-content:flex-start;
+  align-items:center; justify-content:center;
   padding:8px; min-height:0;
-  padding-top:10%;
+  gap:8px; overflow:hidden;
 }
 
 #tap-btn {
   position:relative;
-  width:min(210px,44vw); height:min(210px,44vw);
+  width:min(200px,42vw,28vh); height:min(200px,42vw,28vh);
   flex-shrink:0;
   border-radius:50%; border:none; cursor:pointer;
   background:radial-gradient(circle at 38% 32%,#ff9a3c,#c45e00);
@@ -509,12 +509,11 @@ body {
 
 /* ── Cat mood / tamagotchi ────────────────────────── */
 #cat-mood {
-  width:100%; max-width:280px;
-  margin:10px auto 0;
-  display:flex; flex-direction:column; gap:6px;
+  width:100%; max-width:300px;
+  margin:0 auto;
+  display:flex; flex-direction:column; gap:5px;
 }
-.mood-bars { display:flex; flex-direction:column; gap:4px; }
-.mood-bar-row { display:flex; align-items:center; gap:6px; font-size:.8rem; }
+.mood-row { display:flex; align-items:center; gap:8px; font-size:.8rem; }
 .mood-track {
   flex:1; height:5px; border-radius:3px;
   background:rgba(255,255,255,.08); overflow:hidden;
@@ -524,17 +523,16 @@ body {
   transition:width .5s ease, background .3s ease;
   width:100%; background:#4caf50;
 }
-.mood-actions { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
-.mood-actions button {
+.mood-row button {
   background:rgba(255,255,255,.08);
   border:1px solid rgba(255,255,255,.12);
-  border-radius:10px; padding:6px 12px;
-  color:#fff; font-size:.75rem; cursor:pointer;
+  border-radius:8px; padding:3px 8px;
+  color:#fff; font-size:.68rem; cursor:pointer;
   transition:background .15s, opacity .15s;
-  white-space:nowrap;
+  white-space:nowrap; flex-shrink:0;
 }
-.mood-actions button:disabled { opacity:.35; cursor:default; }
-.mood-actions button:active:not(:disabled) { background:rgba(255,255,255,.18); }
+.mood-row button:disabled { opacity:.35; cursor:default; }
+.mood-row button:active:not(:disabled) { background:rgba(255,255,255,.18); }
 
 /* ── Room shop ─────────────────────────────────────── */
 .room-preview {
@@ -542,6 +540,12 @@ body {
   padding:10px 0 4px; justify-content:center;
 }
 .room-item-emoji { font-size:1.6rem; line-height:1; }
+
+/* ── Small screen adjustments (iPhone SE etc.) ───── */
+@media (max-height:700px) {
+  #shop { height:34vh; }
+  #tap-hint, #ticker { display:none; }
+}
 
 #toast {
   position:fixed; top:72px; left:50%;
@@ -585,16 +589,9 @@ body {
     <span class="star-emoji">🐱</span>
   </button>
   <div id="cat-mood">
-    <div class="mood-bars">
-      <div class="mood-bar-row"><span>🍖</span><div class="mood-track"><div id="bar-hunger" class="mood-fill"></div></div></div>
-      <div class="mood-bar-row"><span>🎾</span><div class="mood-track"><div id="bar-happiness" class="mood-fill"></div></div></div>
-      <div class="mood-bar-row"><span>💤</span><div class="mood-track"><div id="bar-energy" class="mood-fill"></div></div></div>
-    </div>
-    <div class="mood-actions">
-      <button id="btn-feed" onclick="feedCat()">🍖 Feed (🐟10)</button>
-      <button id="btn-play" onclick="playCat()">🎾 Play</button>
-      <button id="btn-rest" onclick="restCat()">💤 Rest</button>
-    </div>
+    <div class="mood-row"><span>🍖</span><div class="mood-track"><div id="bar-hunger" class="mood-fill"></div></div><button id="btn-feed" onclick="feedCat()">Feed 🐟10</button></div>
+    <div class="mood-row"><span>🎾</span><div class="mood-track"><div id="bar-happiness" class="mood-fill"></div></div><button id="btn-play" onclick="playCat()">Play</button></div>
+    <div class="mood-row"><span>💤</span><div class="mood-track"><div id="bar-energy" class="mood-fill"></div></div><button id="btn-rest" onclick="restCat()">Rest</button></div>
   </div>
   <div id="tap-hint">pet the cat!</div>
   <div id="ticker">Purrfect… just one more pet.</div>

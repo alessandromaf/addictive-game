@@ -277,9 +277,9 @@ body {
   position:relative; z-index:10;
   flex:1; display:flex;
   flex-direction:column;
-  align-items:center; justify-content:center;
+  align-items:center; justify-content:flex-start;
   padding:8px; min-height:0;
-  padding-top:22%;
+  padding-top:10%;
 }
 
 #tap-btn {
@@ -369,13 +369,14 @@ body {
   flex-shrink:0;
 }
 .stab {
-  flex:1; padding:6px 4px;
+  flex:1; padding:6px 2px;
   background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.1);
   border-radius:10px;
-  color:#7070a0; font-size:.7rem; font-weight:700;
+  color:#7070a0; font-size:.62rem; font-weight:700;
   cursor:pointer; transition:all .15s;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  text-align:center;
 }
 .stab.active {
   background:rgba(255,154,60,.2);
@@ -522,13 +523,14 @@ body {
   transition:width .5s ease, background .3s ease;
   width:100%; background:#4caf50;
 }
-.mood-actions { display:flex; gap:6px; justify-content:center; }
+.mood-actions { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
 .mood-actions button {
   background:rgba(255,255,255,.08);
   border:1px solid rgba(255,255,255,.12);
-  border-radius:10px; padding:5px 10px;
-  color:#fff; font-size:.72rem; cursor:pointer;
+  border-radius:10px; padding:6px 12px;
+  color:#fff; font-size:.75rem; cursor:pointer;
   transition:background .15s, opacity .15s;
+  white-space:nowrap;
 }
 .mood-actions button:disabled { opacity:.35; cursor:default; }
 .mood-actions button:active:not(:disabled) { background:rgba(255,255,255,.18); }
@@ -588,7 +590,7 @@ body {
       <div class="mood-bar-row"><span>💤</span><div class="mood-track"><div id="bar-energy" class="mood-fill"></div></div></div>
     </div>
     <div class="mood-actions">
-      <button id="btn-feed" onclick="feedCat()">🍖 Feed 🐟10</button>
+      <button id="btn-feed" onclick="feedCat()">🍖 Feed (🐟10)</button>
       <button id="btn-play" onclick="playCat()">🎾 Play</button>
       <button id="btn-rest" onclick="restCat()">💤 Rest</button>
     </div>
@@ -615,7 +617,7 @@ body {
 <div id="shop">
   <div id="shop-tabs">
     <button class="stab" data-cat="tap">🤚 Tap</button>
-    <button class="stab active" data-cat="auto">🐾 Helpers</button>
+    <button class="stab active" data-cat="auto">🐾 Cats</button>
     <button class="stab" data-cat="boost">✨ Power</button>
     <button class="stab" data-cat="crit">🍀 Luck</button>
     <button class="stab" data-cat="room">🏠 Room</button>

@@ -1050,7 +1050,10 @@ function getTickerMsg() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // STATE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const SAVE_VERSION = 1;
+
 let G = {
+  version: SAVE_VERSION,
   sl: 0,           // starlight
   total: 0,        // total ever earned (session + all prestiges)
   tapPow: 1,
@@ -1076,11 +1079,19 @@ function saveG() {
   try { localStorage.setItem('tu_v3', JSON.stringify(G)); } catch(e){}
 }
 
+function migrateG(d) {
+  const v = d.version || 0;
+  // v0 → v1: version field didn't exist yet, no data changes needed
+  // future: if (v < 2) { d.newField = defaultValue; }
+  d.version = SAVE_VERSION;
+  return d;
+}
+
 function loadG() {
   try {
     const raw = localStorage.getItem('tu_v3');
     if (!raw) return;
-    const d = JSON.parse(raw);
+    const d = migrateG(JSON.parse(raw));
     Object.assign(G, d);
     const elapsed = (Date.now() - (G.lastTick||Date.now())) / 1000;
     if (elapsed > 5 && G.passRate > 0) {

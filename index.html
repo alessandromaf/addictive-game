@@ -47,12 +47,9 @@ body {
 
 /* ── Header — single compact row ─────────────────────── */
 #header {
-  position:relative; z-index:10;
+  position:fixed; top:0; left:0; right:0; z-index:10;
   display:flex; align-items:center;
-  padding:0 12px;
-  padding-top:calc(env(safe-area-inset-top) + 6px);  /* iPhone notch + glow room */
-  height:calc(64px + env(safe-area-inset-top));
-  flex-shrink:0;
+  padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
 }
 
 /* Left slot: achievements */
@@ -71,7 +68,7 @@ body {
 #currency {
   font-size:2rem; font-weight:800;
   color:#ffd700;
-  text-shadow:0 0 24px rgba(255,215,0,.6);
+  text-shadow:0 2px 16px rgba(255,215,0,.7);
   letter-spacing:.5px;
   transition:transform .08s;
   line-height:1;

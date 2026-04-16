@@ -33,7 +33,17 @@ body {
   overscroll-behavior:none;
   touch-action:pan-y;
   display:flex;
+  justify-content:center;
+}
+
+#app {
+  width:100%;
+  max-width:430px;
+  height:100dvh;
+  display:flex;
   flex-direction:column;
+  position:relative;
+  overflow:hidden;
 }
 
 /* ── Canvases ─────────────────────────────────────────── */
@@ -47,8 +57,9 @@ body {
 
 /* ── Header — single compact row ─────────────────────── */
 #header {
-  position:fixed; top:0; left:0; right:0; z-index:100;
+  position:sticky; top:0; z-index:100;
   display:flex; align-items:center;
+  flex-shrink:0;
   padding:calc(env(safe-area-inset-top) + 22px) 12px 14px;
 }
 
@@ -513,6 +524,7 @@ body {
 <canvas id="starfield"></canvas>
 <canvas id="particles"></canvas>
 
+<div id="app">
 <div id="header">
   <div id="ach-btn-wrap">
     <button id="ach-btn" onclick="openAchievements()" aria-label="Achievements">
@@ -562,6 +574,8 @@ body {
   </div>
   <div id="shop-list"></div>
 </div>
+
+</div><!-- #app -->
 
 <div id="toast"></div>
 

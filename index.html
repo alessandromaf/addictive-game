@@ -47,13 +47,13 @@ body {
 
 /* ── Header — single compact row ─────────────────────── */
 #header {
-  position:fixed; top:0; left:0; right:0; z-index:10;
+  position:fixed; top:0; left:0; right:0; z-index:100;
   display:flex; align-items:center;
   padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
 }
 
-/* Left slot: achievements */
-#ach-btn-wrap { flex:0 0 auto; }
+/* Left slot: achievements — fixed width to match right slot */
+#ach-btn-wrap { flex:0 0 80px; display:flex; align-items:center; }
 
 /* Centre slot: currency + rates stacked */
 #header-center {
@@ -62,8 +62,8 @@ body {
   gap:1px;
 }
 
-/* Right slot: music + sound */
-#header-right { flex:0 0 auto; display:flex; gap:6px; }
+/* Right slot: music + sound — fixed width to match left slot */
+#header-right { flex:0 0 80px; display:flex; gap:6px; justify-content:flex-end; align-items:center; }
 
 #currency {
   font-size:2rem; font-weight:800;

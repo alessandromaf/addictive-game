@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Cat Collector 🐱</title>
-<!-- BUILD v6 -->
+<!-- BUILD v7 -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff9a3c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -505,6 +505,41 @@ body {
   padding:8px 10px; font-size:.85rem; cursor:pointer;
 }
 
+/* ── Cat mood / tamagotchi ────────────────────────── */
+#cat-mood {
+  width:100%; max-width:280px;
+  margin:10px auto 0;
+  display:flex; flex-direction:column; gap:6px;
+}
+.mood-bars { display:flex; flex-direction:column; gap:4px; }
+.mood-bar-row { display:flex; align-items:center; gap:6px; font-size:.8rem; }
+.mood-track {
+  flex:1; height:5px; border-radius:3px;
+  background:rgba(255,255,255,.08); overflow:hidden;
+}
+.mood-fill {
+  height:100%; border-radius:3px;
+  transition:width .5s ease, background .3s ease;
+  width:100%; background:#4caf50;
+}
+.mood-actions { display:flex; gap:6px; justify-content:center; }
+.mood-actions button {
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px; padding:5px 10px;
+  color:#fff; font-size:.72rem; cursor:pointer;
+  transition:background .15s, opacity .15s;
+}
+.mood-actions button:disabled { opacity:.35; cursor:default; }
+.mood-actions button:active:not(:disabled) { background:rgba(255,255,255,.18); }
+
+/* ── Room shop ─────────────────────────────────────── */
+.room-preview {
+  display:flex; flex-wrap:wrap; gap:6px;
+  padding:10px 0 4px; justify-content:center;
+}
+.room-item-emoji { font-size:1.6rem; line-height:1; }
+
 #toast {
   position:fixed; top:72px; left:50%;
   transform:translateX(-50%) translateY(-12px);
@@ -546,6 +581,18 @@ body {
   <button id="tap-btn" aria-label="Tap">
     <span class="star-emoji">🐱</span>
   </button>
+  <div id="cat-mood">
+    <div class="mood-bars">
+      <div class="mood-bar-row"><span>🍖</span><div class="mood-track"><div id="bar-hunger" class="mood-fill"></div></div></div>
+      <div class="mood-bar-row"><span>🎾</span><div class="mood-track"><div id="bar-happiness" class="mood-fill"></div></div></div>
+      <div class="mood-bar-row"><span>💤</span><div class="mood-track"><div id="bar-energy" class="mood-fill"></div></div></div>
+    </div>
+    <div class="mood-actions">
+      <button id="btn-feed" onclick="feedCat()">🍖 Feed 🐟10</button>
+      <button id="btn-play" onclick="playCat()">🎾 Play</button>
+      <button id="btn-rest" onclick="restCat()">💤 Rest</button>
+    </div>
+  </div>
   <div id="tap-hint">pet the cat!</div>
   <div id="ticker">Purrfect… just one more pet.</div>
 </div>
@@ -571,6 +618,7 @@ body {
     <button class="stab active" data-cat="auto">🐾 Helpers</button>
     <button class="stab" data-cat="boost">✨ Power</button>
     <button class="stab" data-cat="crit">🍀 Luck</button>
+    <button class="stab" data-cat="room">🏠 Room</button>
   </div>
   <div id="shop-list"></div>
 </div>
@@ -948,6 +996,22 @@ const ITEMS = [
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ROOM ITEMS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const ROOM_ITEMS = [
+  { id:'r1',  icon:'🛏️', name:'Cozy Cat Bed',      desc:'Energy decays 20% slower',                    cost:500    },
+  { id:'r2',  icon:'🐟', name:'Fish Bowl',           desc:'Hunger decays 20% slower',                    cost:250    },
+  { id:'r3',  icon:'🎾', name:'Toy Ball',             desc:'Happiness decays 20% slower',                 cost:150    },
+  { id:'r4',  icon:'🌿', name:'Catnip Plant',         desc:'All needs decay 10% slower · Play restores extra +10', cost:1200 },
+  { id:'r5',  icon:'🪟', name:'Sunny Window',         desc:'Rest restores +20 extra energy',              cost:800    },
+  { id:'r6',  icon:'🍽️', name:'Premium Food Bowl',   desc:'Feed restores +20 extra hunger',              cost:2000   },
+  { id:'r7',  icon:'📚', name:'Cat Bookshelf',        desc:'+5% passive income',                          cost:3500   },
+  { id:'r8',  icon:'🎨', name:'Wall Paintings',       desc:'+5% tap power',                               cost:5000   },
+  { id:'r9',  icon:'🏺', name:'Fancy Vase',           desc:'Pure decoration — very distinguished',        cost:1000   },
+  { id:'r10', icon:'👑', name:'Royal Cat Throne',     desc:'+10% all income · Mood bonus cap +35%',       cost:15000  },
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PRESTIGE THEMES
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const THEMES = [
@@ -1050,7 +1114,7 @@ function getTickerMsg() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // STATE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 
 let G = {
   version: SAVE_VERSION,
@@ -1070,6 +1134,10 @@ let G = {
   taps: 0,
   crits: 0,
   purchases: 0,
+  // tamagotchi needs
+  hunger: 100, happiness: 100, energy: 100,
+  lastFeed: 0, lastPlay: 0, lastRest: 0,
+  room: {},        // roomItemId → true
 };
 
 const MILESTONES = [100,1000,10000,100000,1e6,1e7,1e8,1e9];
@@ -1082,7 +1150,11 @@ function saveG() {
 function migrateG(d) {
   const v = d.version || 0;
   // v0 → v1: version field didn't exist yet, no data changes needed
-  // future: if (v < 2) { d.newField = defaultValue; }
+  if (v < 2) {
+    d.hunger = 100; d.happiness = 100; d.energy = 100;
+    d.lastFeed = 0; d.lastPlay = 0; d.lastRest = 0;
+    d.room = {};
+  }
   d.version = SAVE_VERSION;
   return d;
 }
@@ -1102,6 +1174,12 @@ function loadG() {
       showToast(`Welcome back! Your cats earned ${fmt(offline)} treats while you were away! 🐱`);
     }
     G.lastTick = Date.now();
+    // Offline need decay — capped at 50% so sleeping doesn't destroy the cat
+    if (elapsed > 0) {
+      G.hunger    = Math.max(50, G.hunger    - (1/60)  * elapsed);
+      G.happiness = Math.max(50, G.happiness - (1/75)  * elapsed);
+      G.energy    = Math.max(50, G.energy    - (1/120) * elapsed);
+    }
   } catch(e) {}
 }
 
@@ -1162,6 +1240,21 @@ function recalc() {
   const bMul = (typeof isBoostActive === 'function' && isBoostActive()) ? 2 : 1;
   G.tapPow   *= bMul;
   G.passRate *= bMul;
+
+  // tamagotchi needs multiplier
+  const avgNeed = (G.hunger + G.happiness + G.energy) / 300;
+  const moodCap = G.room?.['r10'] ? 0.35 : 0.25;
+  let needMult;
+  if (avgNeed >= 0.75)      needMult = 1 + (avgNeed - 0.75) * (moodCap / 0.25);
+  else if (avgNeed >= 0.40) needMult = 1.0;
+  else                      needMult = 0.5 + avgNeed * 1.25;
+  G.passRate *= needMult;
+  G.tapPow   *= Math.sqrt(needMult);
+
+  // room production bonuses
+  if (G.room?.['r7'])  G.passRate *= 1.05;
+  if (G.room?.['r8'])  G.tapPow   *= 1.05;
+  if (G.room?.['r10']) G.passRate *= 1.10;
 }
 
 function buy(id) {
@@ -1307,6 +1400,16 @@ function tick() {
     checkMilestones();
   }
 
+  // tamagotchi need decay
+  const dH = (1/60)  * (G.room?.['r2']?0.8:1) * (G.room?.['r4']?0.9:1);
+  const dHp = (1/75) * (G.room?.['r3']?0.8:1) * (G.room?.['r4']?0.9:1);
+  const dE = (1/120) * (G.room?.['r1']?0.8:1) * (G.room?.['r4']?0.9:1);
+  G.hunger    = Math.max(0, G.hunger    - dH  * dt);
+  G.happiness = Math.max(0, G.happiness - dHp * dt);
+  G.energy    = Math.max(0, G.energy    - dE  * dt);
+  recalc();
+  renderMood();
+
   renderHeader();
   updateCardCosts();
   requestAnimationFrame(tick);
@@ -1362,6 +1465,8 @@ function initShopTabs() {
 }
 
 function buildShop() {
+  if (activeShopCat === 'room') { buildRoomShop(); return; }
+
   const list = document.getElementById('shop-list');
   list.innerHTML = '';
 
@@ -1437,7 +1542,9 @@ function buildShop() {
   // Highlight tabs that have affordable items
   document.querySelectorAll('.stab').forEach(btn=>{
     const cat = btn.dataset.cat;
-    const hasBuy = ITEMS.some(i=>i.cat===cat && !isMaxed(i) && isUnlocked(i) && G.sl >= cost(i));
+    const hasBuy = cat === 'room'
+      ? ROOM_ITEMS.some(i => !G.room[i.id] && G.sl >= i.cost)
+      : ITEMS.some(i=>i.cat===cat && !isMaxed(i) && isUnlocked(i) && G.sl >= cost(i));
     btn.classList.toggle('has-buy', hasBuy);
   });
 }
@@ -1640,6 +1747,124 @@ const AD_COOLDOWN      = 30 * 60 * 1000;
 const AD_COOLDOWN_KEY  = 'tu_ad_cooldown';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TAMAGOTCHI
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const FEED_COST = 10;
+const FEED_CD   = 5  * 60 * 1000;
+const PLAY_CD   = 3  * 60 * 1000;
+const REST_CD   = 30 * 60 * 1000;
+
+function feedCat() {
+  if (Date.now() - G.lastFeed < FEED_CD) return;
+  if (G.sl < FEED_COST) { showToast('Not enough fish treats! 🐟'); return; }
+  G.sl -= FEED_COST;
+  const bonus = G.room['r6'] ? 20 : 0;
+  G.hunger = Math.min(100, G.hunger + 40 + bonus);
+  G.lastFeed = Date.now();
+  recalc(); renderMood();
+  showToast('😸 Cat fed! Hunger restored!');
+  sndPurchase(); haptic([8,4,12]); saveG();
+}
+
+function playCat() {
+  if (Date.now() - G.lastPlay < PLAY_CD) return;
+  const bonus = G.room['r4'] ? 10 : 0;
+  G.happiness = Math.min(100, G.happiness + 30 + bonus);
+  G.lastPlay = Date.now();
+  recalc(); renderMood();
+  showToast('🎾 Played with the cat! Happiness up!');
+  sndTap(); haptic([8,4,12]); saveG();
+}
+
+function restCat() {
+  if (Date.now() - G.lastRest < REST_CD) return;
+  const bonus = G.room['r5'] ? 20 : 0;
+  G.energy = Math.min(100, G.energy + 50 + bonus);
+  G.lastRest = Date.now();
+  recalc(); renderMood();
+  showToast('💤 Cat is resting... Energy restored!');
+  sndTap(); haptic([8,4,12]); saveG();
+}
+
+function renderMood() {
+  const now = Date.now();
+  // bars
+  ['hunger','happiness','energy'].forEach(need => {
+    const bar = document.getElementById('bar-' + need);
+    if (!bar) return;
+    const val = G[need];
+    bar.style.width = val + '%';
+    bar.style.background = val > 60 ? '#4caf50' : val > 30 ? '#ff9800' : '#f44336';
+  });
+  // buttons
+  const feedBtn = document.getElementById('btn-feed');
+  const playBtn = document.getElementById('btn-play');
+  const restBtn = document.getElementById('btn-rest');
+  if (feedBtn) feedBtn.disabled = (now - G.lastFeed < FEED_CD) || G.sl < FEED_COST;
+  if (playBtn) playBtn.disabled = (now - G.lastPlay < PLAY_CD);
+  if (restBtn) restBtn.disabled = (now - G.lastRest < REST_CD);
+  // cat emoji mood
+  const avg = (G.hunger + G.happiness + G.energy) / 3;
+  const emoji = avg > 75 ? '😸' : avg > 50 ? '😺' : avg > 25 ? '😿' : '😾';
+  const star = document.querySelector('#tap-btn .star-emoji');
+  if (star) star.textContent = emoji;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ROOM SHOP
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildRoomShop() {
+  const list = document.getElementById('shop-list');
+  list.innerHTML = '';
+
+  ROOM_ITEMS.forEach(item => {
+    const owned  = !!G.room[item.id];
+    const canBuy = !owned && G.sl >= item.cost;
+    const card = document.createElement('div');
+    card.className = 'card' + (owned ? ' maxed' : canBuy ? ' can-buy' : '');
+    if (owned) card.style.opacity = '0.6';
+    card.innerHTML = `
+      <div class="card-icon">${item.icon}</div>
+      <div class="card-body">
+        <div class="card-name">${item.name}</div>
+        <div class="card-desc">${item.desc}</div>
+      </div>
+      <div class="card-right"><div class="card-cost">${owned ? '✅ Owned' : `🐟 ${fmt(item.cost)}`}</div></div>
+    `;
+    if (!owned) card.addEventListener('click', () => buyRoom(item.id));
+    list.appendChild(card);
+  });
+
+  // Room preview — owned items as large emoji
+  const owned = ROOM_ITEMS.filter(i => G.room[i.id]);
+  if (owned.length) {
+    const preview = document.createElement('div');
+    preview.className = 'room-preview';
+    owned.forEach(i => {
+      const el = document.createElement('span');
+      el.className = 'room-item-emoji';
+      el.title = i.name;
+      el.textContent = i.icon;
+      preview.appendChild(el);
+    });
+    list.appendChild(preview);
+  }
+}
+
+function buyRoom(id) {
+  const item = ROOM_ITEMS.find(i => i.id === id);
+  if (!item || G.room[id]) return;
+  if (G.sl < item.cost) return;
+  G.sl -= item.cost;
+  G.room[id] = true;
+  G.purchases++;
+  recalc();
+  buildShop();
+  showToast(`${item.icon} ${item.name} added to your cat's room!`);
+  sndPurchase(); haptic([10,5,20]); saveG();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // INIT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 loadG();
@@ -1647,6 +1872,7 @@ recalc();
 initShopTabs();
 buildShop();
 renderHeader();
+renderMood();
 
 applyTheme(G.prestigeCount);
 
